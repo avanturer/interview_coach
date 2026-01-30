@@ -34,7 +34,7 @@ from src.topics import SUPPORTED_POSITIONS, normalize_position
 from src.main import print_feedback
 from src.utils.logger import InterviewLogger, export_for_submission
 
-console = Console()
+console = Console(width=100)
 
 
 def run_scenario(

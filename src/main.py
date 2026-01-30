@@ -17,7 +17,7 @@ from src.topics import SUPPORTED_POSITIONS, normalize_position
 from src.utils.logger import InterviewLogger
 
 app = typer.Typer(name="interview-coach", add_completion=False)
-console = Console()
+console = Console(width=100)
 
 
 def print_feedback(feedback: dict):
@@ -26,9 +26,9 @@ def print_feedback(feedback: dict):
     console.print(Panel("[bold]ФИНАЛЬНЫЙ ФИДБЭК[/bold]", style="green"))
 
     decision = feedback.get("decision", {})
-    table = Table(title="Вердикт", show_header=False, border_style="cyan")
+    table = Table(title="Вердикт", show_header=False, border_style="cyan", expand=False)
     table.add_column("Параметр", style="cyan", width=20)
-    table.add_column("Значение", style="white")
+    table.add_column("Значение", style="white", width=76)  # 100 - рамки - параметр
 
     rec = decision.get("hiring_recommendation", "N/A")
     rec_style = {"Strong Hire": "bold green", "Hire": "green", "No Hire": "red"}.get(rec, "white")
