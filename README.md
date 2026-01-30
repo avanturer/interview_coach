@@ -132,6 +132,7 @@ python run_scenario.py scenarios/example_scenario.txt interview_log_1.json --par
 - `MAX_TURNS` — лимит вопросов (по умолчанию 10)
 - `CONTEXT_WINDOW_SIZE` — сколько последних реплик в контексте (по умолчанию 5)
 - `MAX_SPAM_COUNT`, `MAX_EVASION_COUNT` — при каком количестве завершать досрочно
+- `REPEATED_EVASION_THRESHOLD` — при скольких уклонениях подряд добавлять red_flag
 - `HINT_EVASION_THRESHOLD`, `HINT_SKIPPED_THRESHOLD` — при скольких уклонениях/пропусках давать подсказку
 - `MAX_HINTS` — максимум подсказок за интервью
 - `TEMP_INTERVIEWER`, `TEMP_OBSERVER`, `TEMP_EVALUATOR` — температуры LLM для агентов
