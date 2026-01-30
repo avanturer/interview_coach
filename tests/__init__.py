@@ -1,1 +1,1 @@
-"""Tests for Interview Coach."""
+"""Тесты Interview Coach."""

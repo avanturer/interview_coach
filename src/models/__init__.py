@@ -1,4 +1,4 @@
-"""Data models for Interview Coach."""
+"""Модели данных."""
 
 from src.models.feedback import (
     Decision,

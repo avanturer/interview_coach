@@ -1,4 +1,4 @@
-"""Evaluator agent prompts."""
+"""Промпты агента Evaluator."""
 
 EVALUATOR_SYSTEM_PROMPT = """Ты — Evaluator в мультиагентной системе технического интервью.
 
@@ -32,7 +32,7 @@ def get_evaluator_prompt(
     behavior_stats: dict | None = None,
     soft_skills_data: dict | None = None,
 ) -> str:
-    """Generate evaluation prompt with full context."""
+    """Сгенерировать промпт оценки с полным контекстом."""
     skills_str = ""
     if skill_scores:
         for topic, score in skill_scores.items():
@@ -138,40 +138,3 @@ Soft Skills:
 4. Roadmap должен содержать реальные ресурсы
 
 Верни только JSON:"""
-
-
-FEEDBACK_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "decision": {
-            "type": "object",
-            "properties": {
-                "assessed_grade": {"type": "string"},
-                "hiring_recommendation": {"type": "string"},
-                "confidence_score": {"type": "integer"},
-                "summary": {"type": "string"},
-            },
-            "required": ["assessed_grade", "hiring_recommendation", "confidence_score", "summary"],
-        },
-        "hard_skills": {
-            "type": "object",
-            "properties": {
-                "confirmed_skills": {"type": "array", "items": {"type": "string"}},
-                "knowledge_gaps": {"type": "array"},
-                "technical_depth": {"type": "integer"},
-            },
-        },
-        "soft_skills": {
-            "type": "object",
-            "properties": {
-                "clarity": {"type": "integer"},
-                "honesty": {"type": "integer"},
-                "engagement": {"type": "integer"},
-                "red_flags": {"type": "array", "items": {"type": "string"}},
-            },
-        },
-        "roadmap": {"type": "array"},
-        "interview_summary": {"type": "string"},
-    },
-    "required": ["decision", "hard_skills", "soft_skills", "roadmap", "interview_summary"],
-}

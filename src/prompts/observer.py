@@ -1,4 +1,4 @@
-"""Prompts for the Observer agent."""
+"""Промпты агента Observer."""
 
 OBSERVER_SYSTEM_PROMPT = """Ты — Observer в мультиагентной системе технического интервью.
 
@@ -36,7 +36,7 @@ def get_observer_prompt(
     current_difficulty: int,
     interview_phase: str = "technical",
 ) -> str:
-    """Generate the observer prompt for analyzing a candidate's answer."""
+    """Сгенерировать промпт Observer для анализа ответа кандидата."""
     covered_str = ", ".join(covered_topics) if covered_topics else "нет"
     skipped_str = ", ".join(skipped_topics) if skipped_topics else "нет"
 
@@ -83,6 +83,7 @@ def get_observer_prompt(
     "showed_honesty": true/false,
     "showed_engagement": true/false,
     "detected_skills": ["skill1"],
+    "mentioned_info": ["что кандидат упомянул о себе: проекты, курсы, опыт"],
     
     "instruction_to_interviewer": "...",
     "should_adjust_difficulty": "up/down/same",
@@ -105,28 +106,3 @@ Grade mismatch:
 - Senior не знает что такое JOIN -> underqualified
 
 Верни только JSON:"""
-
-
-OBSERVER_ANALYSIS_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "is_valid_answer": {"type": "boolean"},
-        "is_hallucination": {"type": "boolean"},
-        "hallucination_details": {"type": "string"},
-        "is_off_topic": {"type": "boolean"},
-        "is_question_from_user": {"type": "boolean"},
-        "user_question": {"type": "string"},
-        "answer_quality": {"type": "integer", "minimum": 1, "maximum": 10},
-        "detected_skills": {"type": "array", "items": {"type": "string"}},
-        "instruction_to_interviewer": {"type": "string"},
-        "should_adjust_difficulty": {"type": "string", "enum": ["up", "down", "same"]},
-        "thoughts": {"type": "string"},
-    },
-    "required": [
-        "is_valid_answer",
-        "is_hallucination",
-        "answer_quality",
-        "instruction_to_interviewer",
-        "thoughts",
-    ],
-}

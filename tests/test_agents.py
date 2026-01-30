@@ -1,4 +1,4 @@
-"""Tests for Interview Coach multi-agent system."""
+"""Тесты мультиагентной системы Interview Coach."""
 
 import json
 import pytest
@@ -23,10 +23,10 @@ from src.utils.logger import InterviewLogger
 
 
 class TestModels:
-    """Tests for Pydantic models."""
+    """Тесты Pydantic-моделей."""
 
     def test_create_initial_state(self):
-        """Test creating initial interview state."""
+        """Тест создания начального состояния."""
         input_data = InterviewInput(
             participant_name="Алекс",
             position="Backend Developer",
@@ -46,7 +46,7 @@ class TestModels:
         assert state["is_finished"] is False
 
     def test_turn_model(self):
-        """Test Turn model creation."""
+        """Тест создания модели Turn."""
         turn = Turn(
             turn_id=1,
             agent_visible_message="Привет! Расскажи о себе.",
@@ -60,7 +60,7 @@ class TestModels:
         assert "[Observer]" in turn.internal_thoughts
 
     def test_observer_analysis(self):
-        """Test ObserverAnalysis model."""
+        """Тест модели ObserverAnalysis."""
         analysis = ObserverAnalysis(
             is_valid_answer=True,
             is_hallucination=False,
@@ -76,7 +76,7 @@ class TestModels:
         assert "Python" in analysis.detected_skills
 
     def test_skill_score(self):
-        """Test SkillScore model."""
+        """Тест модели SkillScore."""
         score = SkillScore(
             topic="Python",
             score=7,
@@ -90,7 +90,7 @@ class TestModels:
         assert score.correct_answers == 3
 
     def test_final_feedback(self):
-        """Test FinalFeedback model."""
+        """Тест модели FinalFeedback."""
         feedback = FinalFeedback(
             decision=Decision(
                 assessed_grade="Junior",
@@ -136,7 +136,7 @@ class TestModels:
         assert feedback.soft_skills.honesty == 9
 
     def test_feedback_to_log_dict(self):
-        """Test converting FinalFeedback to dictionary."""
+        """Тест конвертации FinalFeedback в словарь."""
         feedback = FinalFeedback(
             decision=Decision(
                 assessed_grade="Junior",
@@ -166,10 +166,10 @@ class TestModels:
 
 
 class TestLogger:
-    """Tests for InterviewLogger."""
+    """Тесты InterviewLogger."""
 
     def test_logger_session(self, tmp_path):
-        """Test logger session lifecycle."""
+        """Тест жизненного цикла сессии логгера."""
         logger = InterviewLogger(log_dir=tmp_path)
 
         # Start session
@@ -209,7 +209,7 @@ class TestLogger:
         assert len(saved_log["turns"]) == 1
 
     def test_logger_with_feedback(self, tmp_path):
-        """Test logging final feedback."""
+        """Тест логирования финального фидбэка."""
         logger = InterviewLogger(log_dir=tmp_path)
 
         logger.start_session(
@@ -237,11 +237,10 @@ class TestLogger:
 
 
 class TestScenario:
-    """Test scenarios from task specification."""
+    """Тесты сценариев из спецификации задания."""
 
     def test_observer_intent_detection(self):
-        """Test that ObserverAnalysis can detect intents."""
-        # Test wants_to_end_interview
+        """Тест детекции намерений в ObserverAnalysis."""
         analysis_end = ObserverAnalysis(wants_to_end_interview=True)
         assert analysis_end.wants_to_end_interview is True
 
@@ -254,40 +253,31 @@ class TestScenario:
         assert analysis_covered.topic_covered is True
         assert analysis_covered.answer_quality == 8
 
-        # Default values
         analysis_default = ObserverAnalysis()
         assert analysis_default.wants_to_end_interview is False
         assert analysis_default.wants_to_skip is False
         assert analysis_default.topic_covered is False
 
     def test_hallucination_detection_scenario(self):
-        """Test that we can detect the hallucination from the task scenario."""
+        """Тест сценария с галлюцинацией из ТЗ."""
         hallucination_text = (
             "Честно говоря, я читал на Хабре, что в Python 4.0 "
             "циклы for уберут и заменят на нейронные связи, поэтому я их не учу."
         )
 
-        # This should be flagged as hallucination
-        # (actual detection happens in Observer agent)
         assert "Python 4.0" in hallucination_text
         assert "нейронные связи" in hallucination_text
 
-        # The statement contains factually incorrect information:
-        # 1. Python 4.0 doesn't exist
-        # 2. for loops are not being replaced by "neural connections"
-
     def test_role_reversal_scenario(self):
-        """Test that we can handle the role reversal scenario."""
+        """Тест сценария смены ролей."""
         user_question = (
             "Слушайте, а какие задачи вообще будут на испытательном сроке? "
             "Вы используете микросервисы?"
         )
 
-        # This contains questions that the Interviewer should answer
         question_markers = ["?", "какие задачи", "используете"]
         assert any(marker in user_question for marker in question_markers)
 
 
-# Run with: pytest tests/test_agents.py -v
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

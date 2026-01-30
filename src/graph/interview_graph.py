@@ -1,4 +1,4 @@
-"""LangGraph workflow for interview orchestration."""
+"""LangGraph workflow для оркестрации интервью."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ from src.models.state import InterviewState, SoftSkillsTracker, Turn
 
 
 def create_interview_graph() -> StateGraph:
-    """Create and compile the interview workflow graph."""
+    """Создать и скомпилировать граф workflow интервью."""
     interviewer = InterviewerAgent(get_llm_for_agent("interviewer"))
     observer = ObserverAgent(get_llm_for_agent("observer"))
     evaluator = EvaluatorAgent(get_llm_for_agent("evaluator"))
@@ -51,7 +51,6 @@ def create_interview_graph() -> StateGraph:
     def check_termination(state: InterviewState) -> Literal["continue", "finish"]:
         if state.get("is_finished", False):
             return "finish"
-        # Use Observer's semantic intent detection
         analysis = state.get("current_observer_analysis")
         if analysis and getattr(analysis, "wants_to_end_interview", False):
             return "finish"
@@ -78,7 +77,7 @@ def create_interview_graph() -> StateGraph:
 
 
 class InterviewSession:
-    """Manages interview flow with cached agents for optimal performance."""
+    """Управляет потоком интервью с кешированными агентами."""
 
     __slots__ = ("_state", "_interviewer", "_observer", "_evaluator", "_initialized")
 
@@ -114,47 +113,35 @@ class InterviewSession:
         grade: str,
         experience: str,
     ) -> str:
-        """Start a new interview session, return initial greeting."""
-        # Set initial difficulty based on grade
+        """Начать новую сессию интервью, вернуть приветствие."""
         initial_difficulty = self._get_initial_difficulty(grade)
         
         self._state = InterviewState(
-            # Participant info
             participant_name=participant_name,
             position=position,
             grade=grade,
             experience=experience,
-            
-            # Progress tracking
             turns=[],
             current_turn_id=0,
             current_difficulty=initial_difficulty,
             covered_topics=[],
             skipped_topics=[],
             skill_scores={},
-            
-            # Interview phase
+            candidate_mentioned=[],
             interview_phase="intro",
             technical_questions_count=0,
-            
-            # Behavior tracking (for final evaluation)
             evasion_count=0,
             hallucination_count=0,
             confident_nonsense_count=0,
+            spam_count=0,
             overqualified_signals=0,
             underqualified_signals=0,
             hints_used=0,
-            
-            # Soft skills continuous tracking
             soft_skills_tracker=SoftSkillsTracker(),
-            
-            # Current turn
             current_user_message="",
             current_agent_message="",
             current_observer_analysis=None,
             internal_thoughts_buffer=[],
-            
-            # Control
             is_finished=False,
             finish_reason="",
             final_feedback=None,
@@ -168,22 +155,21 @@ class InterviewSession:
         return self._state["current_agent_message"]
 
     def _get_initial_difficulty(self, grade: str) -> int:
-        """Set initial question difficulty based on candidate's grade."""
+        """Установить начальную сложность вопросов на основе грейда."""
         grade_lower = grade.lower()
         if "senior" in grade_lower:
-            return 3  # Start with intermediate questions
+            return 3
         if "middle" in grade_lower:
-            return 2  # Start with practical questions
-        return 1  # Junior - start with basics
+            return 2
+        return 1
 
     def process_user_input(self, user_message: str) -> tuple[str, bool, dict | None]:
-        """Process user input, return (response, is_finished, feedback)."""
+        """Обработать ввод пользователя, вернуть (ответ, завершено, фидбэк)."""
         if not self._initialized or self._state is None:
             raise RuntimeError("Session not initialized. Call initialize() first.")
 
         self._state["current_user_message"] = user_message
-        
-        # Transition from intro to technical phase after first response
+
         if self._state.get("interview_phase") == "intro":
             self._state["interview_phase"] = "technical"
 
@@ -236,14 +222,14 @@ class InterviewSession:
         self._state["internal_thoughts_buffer"] = []
 
     def _should_finish(self) -> bool:
-        """Check if interview should end."""
+        """Проверить, должно ли интервью завершиться."""
         analysis = self._state.get("current_observer_analysis")
         if analysis and analysis.wants_to_end_interview:
             return True
         
         spam_count = self._state.get("spam_count", 0)
         evasion_count = self._state.get("evasion_count", 0)
-        if spam_count >= 3 or evasion_count >= 5:
+        if spam_count >= settings.max_spam_count or evasion_count >= settings.max_evasion_count:
             return True
         
         return self._state.get("current_turn_id", 0) >= settings.max_turns

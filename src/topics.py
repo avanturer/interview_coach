@@ -1,8 +1,4 @@
-"""Topic banks for different IT positions.
-
-Contains structured topics with difficulty levels for conducting
-targeted technical interviews based on candidate's position and grade.
-"""
+"""Банки тем для разных IT-позиций."""
 
 from __future__ import annotations
 
@@ -12,14 +8,15 @@ from typing import Final
 
 @dataclass(frozen=True)
 class Topic:
-    """Interview topic with difficulty levels."""
+    """Тема интервью с уровнями сложности."""
+
     name: str
     junior_questions: tuple[str, ...]
     middle_questions: tuple[str, ...]
     senior_questions: tuple[str, ...]
-    
+
     def get_questions(self, grade: str, difficulty: int) -> list[str]:
-        """Get questions appropriate for grade and difficulty."""
+        """Получить вопросы для грейда и сложности."""
         grade_lower = grade.lower()
         
         if "senior" in grade_lower or difficulty >= 4:
@@ -29,7 +26,6 @@ class Topic:
         return list(self.junior_questions)
 
 
-# ============== BACKEND DEVELOPER ==============
 BACKEND_TOPICS: Final[dict[str, Topic]] = {
     "python_basics": Topic(
         name="Python основы",
@@ -123,7 +119,6 @@ BACKEND_TOPICS: Final[dict[str, Topic]] = {
     ),
 }
 
-# ============== ML ENGINEER ==============
 ML_TOPICS: Final[dict[str, Topic]] = {
     "ml_basics": Topic(
         name="ML основы",
@@ -199,7 +194,6 @@ ML_TOPICS: Final[dict[str, Topic]] = {
     ),
 }
 
-# ============== FRONTEND DEVELOPER ==============
 FRONTEND_TOPICS: Final[dict[str, Topic]] = {
     "javascript": Topic(
         name="JavaScript",
@@ -257,7 +251,6 @@ FRONTEND_TOPICS: Final[dict[str, Topic]] = {
     ),
 }
 
-# ============== DEVOPS ==============
 DEVOPS_TOPICS: Final[dict[str, Topic]] = {
     "linux": Topic(
         name="Linux",
@@ -315,7 +308,6 @@ DEVOPS_TOPICS: Final[dict[str, Topic]] = {
     ),
 }
 
-# ============== DATA ANALYST ==============
 DATA_ANALYST_TOPICS: Final[dict[str, Topic]] = {
     "sql": Topic(
         name="SQL",
@@ -373,39 +365,99 @@ DATA_ANALYST_TOPICS: Final[dict[str, Topic]] = {
     ),
 }
 
-# Position to topics mapping
+QA_TOPICS: Final[dict[str, Topic]] = {
+    "testing_basics": Topic(
+        name="Основы тестирования",
+        junior_questions=(
+            "Что такое unit-тест, интеграционный тест, e2e-тест?",
+            "Что такое тест-кейс и из чего он состоит?",
+            "Чем отличается smoke-тестирование от регрессионного?",
+        ),
+        middle_questions=(
+            "Как писать тест-кейсы по техникам эквивалентного разбиения и граничных значений?",
+            "Как организовать тестовую документацию в проекте?",
+            "Что такое пирамида тестирования?",
+        ),
+        senior_questions=(
+            "Как выстроить стратегию тестирования для нового проекта?",
+            "Как оценить test coverage и какой уровень достаточен?",
+            "Как организовать тестирование в условиях частых релизов?",
+        ),
+    ),
+    "automation": Topic(
+        name="Автоматизация тестирования",
+        junior_questions=(
+            "Какие инструменты автоматизации тестирования знаешь?",
+            "Что такое Selenium/Playwright?",
+            "Что такое Page Object паттерн?",
+        ),
+        middle_questions=(
+            "Как организовать структуру автотестов?",
+            "Как работать с flaky-тестами?",
+            "Как тестировать API автоматически?",
+        ),
+        senior_questions=(
+            "Как встроить автотесты в CI/CD пайплайн?",
+            "Как оптимизировать время прогона тестов?",
+            "Как организовать параллельный запуск тестов?",
+        ),
+    ),
+    "api_testing": Topic(
+        name="API тестирование",
+        junior_questions=(
+            "Что такое REST API?",
+            "Какие HTTP-методы знаешь?",
+            "Что такое Postman и как им пользоваться?",
+        ),
+        middle_questions=(
+            "Как тестировать авторизацию в API?",
+            "Как валидировать JSON-ответы?",
+            "Что такое контрактное тестирование?",
+        ),
+        senior_questions=(
+            "Как тестировать микросервисную архитектуру?",
+            "Как организовать нагрузочное тестирование API?",
+            "Как тестировать асинхронные API?",
+        ),
+    ),
+}
+
+FULLSTACK_TOPICS: Final[dict[str, Topic]] = {
+    **{k: v for k, v in BACKEND_TOPICS.items() if k in ("python_basics", "databases", "api_design")},
+    **{k: v for k, v in FRONTEND_TOPICS.items() if k in ("javascript", "react")},
+}
+
 POSITION_TOPICS: Final[dict[str, dict[str, Topic]]] = {
-    # Backend variations
     "backend": BACKEND_TOPICS,
     "backend developer": BACKEND_TOPICS,
     "python developer": BACKEND_TOPICS,
     "python разработчик": BACKEND_TOPICS,
     "бэкенд разработчик": BACKEND_TOPICS,
     "бэкенд": BACKEND_TOPICS,
-    
-    # ML variations
     "ml": ML_TOPICS,
     "ml engineer": ML_TOPICS,
     "machine learning": ML_TOPICS,
     "data scientist": ML_TOPICS,
     "ml инженер": ML_TOPICS,
-    
-    # Frontend variations
     "frontend": FRONTEND_TOPICS,
     "frontend developer": FRONTEND_TOPICS,
     "фронтенд разработчик": FRONTEND_TOPICS,
     "react developer": FRONTEND_TOPICS,
-    
-    # DevOps variations
     "devops": DEVOPS_TOPICS,
     "devops engineer": DEVOPS_TOPICS,
     "sre": DEVOPS_TOPICS,
     "infrastructure": DEVOPS_TOPICS,
-    
-    # Data Analyst variations
     "data analyst": DATA_ANALYST_TOPICS,
     "аналитик данных": DATA_ANALYST_TOPICS,
     "bi analyst": DATA_ANALYST_TOPICS,
+    "qa": QA_TOPICS,
+    "qa engineer": QA_TOPICS,
+    "тестировщик": QA_TOPICS,
+    "тестер": QA_TOPICS,
+    "fullstack": FULLSTACK_TOPICS,
+    "fullstack developer": FULLSTACK_TOPICS,
+    "full stack": FULLSTACK_TOPICS,
+    "full-stack": FULLSTACK_TOPICS,
 }
 
 
@@ -416,7 +468,7 @@ SUPPORTED_POSITIONS = (
 
 
 def normalize_position(position: str) -> str | None:
-    """Normalize position to supported IT role. Returns None if not IT-related."""
+    """Нормализовать позицию до поддерживаемой IT-роли. Вернёт None если не IT."""
     pos_lower = position.lower().strip()
     
     if pos_lower in POSITION_TOPICS:
@@ -454,14 +506,15 @@ def normalize_position(position: str) -> str | None:
         "analyst": "Data Analyst",
         "аналитик": "Data Analyst",
         "bi": "Data Analyst",
-        "qa": "Backend Developer",
-        "тестир": "Backend Developer",
-        "тестировщик": "Backend Developer",
-        "fullstack": "Backend Developer",
-        "full stack": "Backend Developer",
-        "фулстек": "Backend Developer",
-        "фуллстек": "Backend Developer",
-        "full-stack": "Backend Developer",
+        "qa": "QA",
+        "тестир": "QA",
+        "тестировщик": "QA",
+        "тестер": "QA",
+        "fullstack": "Fullstack",
+        "full stack": "Fullstack",
+        "фулстек": "Fullstack",
+        "фуллстек": "Fullstack",
+        "full-stack": "Fullstack",
     }
     
     for keyword, role in keywords.items():
@@ -472,30 +525,27 @@ def normalize_position(position: str) -> str | None:
 
 
 def get_topics_for_position(position: str) -> dict[str, Topic]:
-    """Get topic bank for a position, fallback to backend."""
+    """Получить банк тем для позиции, fallback на backend."""
     position_lower = position.lower().strip()
-    
-    # Direct match
+
     if position_lower in POSITION_TOPICS:
         return POSITION_TOPICS[position_lower]
-    
-    # Partial match
+
     for key, topics in POSITION_TOPICS.items():
         if key in position_lower or position_lower in key:
             return topics
-    
-    # Default to backend (most common)
+
     return BACKEND_TOPICS
 
 
 def get_random_topic(position: str, covered: list[str], skipped: list[str]) -> Topic | None:
-    """Get a random uncovered topic for the position."""
+    """Получить случайную непройденную тему для позиции."""
     import random
-    
+
     topics = get_topics_for_position(position)
     available = [
-        t for name, t in topics.items() 
+        t for name, t in topics.items()
         if t.name not in covered and t.name not in skipped
     ]
-    
+
     return random.choice(available) if available else None

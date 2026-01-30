@@ -1,4 +1,4 @@
-"""Agent implementations for Interview Coach."""
+"""Агенты системы."""
 
 from src.agents.base import BaseAgent
 from src.agents.evaluator import EvaluatorAgent

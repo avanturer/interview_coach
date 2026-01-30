@@ -1,8 +1,9 @@
-"""Shared constants."""
+"""Общие константы системы."""
 
 from typing import Final
 
-CONTEXT_WINDOW_SIZE: Final[int] = 5
+VERSION: Final[str] = "1.0.0"
+
 MIN_DIFFICULTY: Final[int] = 1
 MAX_DIFFICULTY: Final[int] = 5
 

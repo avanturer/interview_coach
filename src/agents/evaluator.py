@@ -1,4 +1,4 @@
-"""Evaluator agent - generates final interview feedback."""
+"""Агент-оценщик — генерирует финальный фидбэк."""
 
 from __future__ import annotations
 
@@ -23,9 +23,9 @@ from src.prompts.evaluator import EVALUATOR_SYSTEM_PROMPT, get_evaluator_prompt
 
 
 class EvaluatorAgent(BaseAgent):
-    """Generates final feedback: grade, recommendation, skills analysis, roadmap.
-    
-    Analyzes ALL interview turns to provide comprehensive assessment.
+    """Генерирует финальный фидбэк: грейд, рекомендация, анализ навыков, roadmap.
+
+    Анализирует ВСЕ ходы интервью для комплексной оценки.
     """
 
     def __init__(self, llm: BaseChatModel):
@@ -53,7 +53,6 @@ class EvaluatorAgent(BaseAgent):
         return self._parse_feedback(response, state)
 
     def _build_prompt(self, state: InterviewState) -> str:
-        # Gather behavior stats
         behavior_stats = {
             "evasion_count": state.get("evasion_count", 0),
             "hallucination_count": state.get("hallucination_count", 0),
@@ -62,8 +61,7 @@ class EvaluatorAgent(BaseAgent):
             "underqualified_signals": state.get("underqualified_signals", 0),
             "hints_used": state.get("hints_used", 0),
         }
-        
-        # Gather soft skills data
+
         soft_tracker = state.get("soft_skills_tracker")
         soft_skills_data = None
         if soft_tracker:
@@ -73,7 +71,7 @@ class EvaluatorAgent(BaseAgent):
                 "engagement_signals": soft_tracker.engagement_signals if hasattr(soft_tracker, 'engagement_signals') else [],
                 "red_flags": soft_tracker.red_flags if hasattr(soft_tracker, 'red_flags') else [],
             }
-        
+
         return get_evaluator_prompt(
             position=state.get("position", ""),
             target_grade=state.get("grade", ""),
@@ -101,36 +99,33 @@ class EvaluatorAgent(BaseAgent):
         return "\n".join(parts)
 
     def _parse_feedback(self, response: str, state: InterviewState) -> FinalFeedback:
-        """Parse JSON feedback from LLM response."""
+        """Распарсить JSON-фидбэк из ответа LLM."""
         try:
             match = re.search(r"\{[\s\S]*\}", response)
             data = json.loads(match.group() if match else response)
 
-            # Parse decision with grade_match
             decision_data = data.get("decision", {})
             grade_match_raw = decision_data.get("grade_match", "match")
             grade_match = grade_match_raw if grade_match_raw in ("match", "overqualified", "underqualified") else "match"
-            
+
             decision = Decision(
                 assessed_grade=decision_data.get("assessed_grade", state.get("grade", "Junior")),
                 target_grade=decision_data.get("target_grade", state.get("grade", "")),
                 hiring_recommendation=decision_data.get("hiring_recommendation", "No Hire"),
-                confidence_score=decision_data.get("confidence_score", 50),
+                confidence_score=int(decision_data.get("confidence_score", 50)),
                 grade_match=grade_match,
                 summary=decision_data.get("summary", "Оценка не завершена."),
             )
-            
-            # Parse behavior analysis
+
             behavior_data = data.get("behavior", {})
             behavior = BehaviorAnalysis(
-                evasion_count=behavior_data.get("evasion_count", state.get("evasion_count", 0)),
-                hallucination_count=behavior_data.get("hallucination_count", state.get("hallucination_count", 0)),
-                confident_nonsense_count=behavior_data.get("confident_nonsense_count", state.get("confident_nonsense_count", 0)),
-                hints_used=behavior_data.get("hints_used", state.get("hints_used", 0)),
+                evasion_count=int(behavior_data.get("evasion_count", state.get("evasion_count", 0))),
+                hallucination_count=int(behavior_data.get("hallucination_count", state.get("hallucination_count", 0))),
+                confident_nonsense_count=int(behavior_data.get("confident_nonsense_count", state.get("confident_nonsense_count", 0))),
+                hints_used=int(behavior_data.get("hints_used", state.get("hints_used", 0))),
                 notes=behavior_data.get("notes", []),
             )
 
-            # Parse hard skills
             hard_data = data.get("hard_skills", {})
             gaps = [
                 KnowledgeGap(
@@ -145,22 +140,20 @@ class EvaluatorAgent(BaseAgent):
             hard_skills = HardSkillsAnalysis(
                 confirmed_skills=hard_data.get("confirmed_skills", []),
                 knowledge_gaps=gaps,
-                technical_depth=hard_data.get("technical_depth", 5),
+                technical_depth=int(hard_data.get("technical_depth", 5)),
                 notes=hard_data.get("notes", ""),
             )
 
-            # Parse soft skills
             soft_data = data.get("soft_skills", {})
             soft_skills = SoftSkillsAnalysis(
-                clarity=soft_data.get("clarity", 5),
-                honesty=soft_data.get("honesty", 5),
-                engagement=soft_data.get("engagement", 5),
-                problem_solving=soft_data.get("problem_solving", 5),
+                clarity=int(soft_data.get("clarity", 5)),
+                honesty=int(soft_data.get("honesty", 5)),
+                engagement=int(soft_data.get("engagement", 5)),
+                problem_solving=int(soft_data.get("problem_solving", 5)),
                 communication_style=soft_data.get("communication_style", ""),
                 red_flags=soft_data.get("red_flags", []),
             )
 
-            # Parse roadmap
             roadmap = [
                 RoadmapItem(
                     topic=item.get("topic", ""),
@@ -184,7 +177,7 @@ class EvaluatorAgent(BaseAgent):
             return self._fallback_feedback(state, str(e))
 
     def _fallback_feedback(self, state: InterviewState, error: str) -> FinalFeedback:
-        """Create fallback feedback when parsing fails."""
+        """Создать fallback-фидбэк при ошибке парсинга."""
         return FinalFeedback(
             decision=Decision(
                 assessed_grade=state.get("grade", "Junior"),

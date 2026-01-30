@@ -1,4 +1,4 @@
-"""LLM provider abstraction for Interview Coach."""
+"""Абстракция LLM-провайдера."""
 
 from src.llm.provider import get_llm
 

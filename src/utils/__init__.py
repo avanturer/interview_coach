@@ -1,4 +1,4 @@
-"""Utility functions for Interview Coach."""
+"""Утилиты."""
 
 from src.utils.logger import InterviewLogger
 

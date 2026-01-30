@@ -1,4 +1,4 @@
-"""Feedback models for final interview report."""
+"""Модели финального фидбэка."""
 
 from typing import Literal
 
@@ -6,38 +6,38 @@ from pydantic import BaseModel, Field
 
 
 class Decision(BaseModel):
-    """Hiring decision with grade match analysis."""
+    """Решение о найме с анализом соответствия грейду."""
 
-    assessed_grade: str  # Junior/Middle/Senior
-    target_grade: str = ""  # What candidate claimed
-    hiring_recommendation: str  # Hire/No Hire/Strong Hire
+    assessed_grade: str
+    target_grade: str = ""
+    hiring_recommendation: str
     confidence_score: int = Field(ge=0, le=100)
     grade_match: Literal["match", "overqualified", "underqualified"] = "match"
     summary: str
 
 
 class KnowledgeGap(BaseModel):
-    """Knowledge gap with correct answer."""
+    """Пробел в знаниях с правильным ответом."""
 
     topic: str
     question_asked: str
     candidate_answer: str
     correct_answer: str
-    severity: str = "medium"  # low/medium/high
+    severity: str = "medium"
 
 
 class BehaviorAnalysis(BaseModel):
-    """Analysis of candidate's behavior during interview."""
-    
-    evasion_count: int = 0  # Times avoided answering
-    hallucination_count: int = 0  # False facts detected
-    confident_nonsense_count: int = 0  # Sounded confident but wrong
-    hints_used: int = 0  # Hints given by interviewer
+    """Анализ поведения кандидата."""
+
+    evasion_count: int = 0
+    hallucination_count: int = 0
+    confident_nonsense_count: int = 0
+    hints_used: int = 0
     notes: list[str] = Field(default_factory=list)
 
 
 class HardSkillsAnalysis(BaseModel):
-    """Technical skills analysis."""
+    """Анализ технических навыков."""
 
     confirmed_skills: list[str] = Field(default_factory=list)
     knowledge_gaps: list[KnowledgeGap] = Field(default_factory=list)
@@ -46,7 +46,7 @@ class HardSkillsAnalysis(BaseModel):
 
 
 class SoftSkillsAnalysis(BaseModel):
-    """Soft skills analysis."""
+    """Анализ soft skills."""
 
     clarity: int = Field(ge=1, le=10)
     honesty: int = Field(ge=1, le=10)
@@ -57,15 +57,15 @@ class SoftSkillsAnalysis(BaseModel):
 
 
 class RoadmapItem(BaseModel):
-    """Learning roadmap item."""
+    """Элемент roadmap для обучения."""
 
     topic: str
-    priority: str  # high/medium/low
+    priority: str
     resources: list[str] = Field(default_factory=list)
 
 
 class FinalFeedback(BaseModel):
-    """Complete final feedback."""
+    """Полный финальный фидбэк."""
 
     decision: Decision
     behavior: BehaviorAnalysis = Field(default_factory=BehaviorAnalysis)
@@ -77,7 +77,7 @@ class FinalFeedback(BaseModel):
 
 
 def feedback_to_log_dict(feedback: FinalFeedback) -> dict:
-    """Convert FinalFeedback to dictionary format for JSON log."""
+    """Конвертировать FinalFeedback в словарь для JSON-лога."""
     return {
         "decision": {
             "grade": feedback.decision.assessed_grade,

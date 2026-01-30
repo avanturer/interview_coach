@@ -1,4 +1,4 @@
-"""Prompt templates for Interview Coach agents."""
+"""Промпты агентов."""
 
 from src.prompts.evaluator import EVALUATOR_SYSTEM_PROMPT, get_evaluator_prompt
 from src.prompts.interviewer import INTERVIEWER_SYSTEM_PROMPT, get_interviewer_prompt

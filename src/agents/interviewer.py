@@ -1,4 +1,4 @@
-"""Interviewer agent - conducts technical interviews."""
+"""Агент-интервьюер — ведёт техническое интервью."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from typing import Any
 from langchain_core.language_models import BaseChatModel
 
 from src.agents.base import BaseAgent
-from src.constants import CONTEXT_WINDOW_SIZE
+from src.config import settings
 from src.models.state import InterviewState
 from src.prompts.interviewer import (
     GREETING_TEMPLATE,
@@ -16,15 +16,14 @@ from src.prompts.interviewer import (
 )
 from src.topics import get_topics_for_position
 
-# Patterns to filter from LLM output
 _META_PREFIXES = ("##", "**", "[", "observer:", "interviewer:", "инструкция:", "задача:", "фаза:")
 _META_KEYWORDS = ("internal thought", "внутренние мысли", "правила:", "контекст:")
 
 
 class InterviewerAgent(BaseAgent):
-    """Conducts interview: asks questions, responds to counter-questions.
-    
-    Does NOT verify facts (Observer) or make hiring decisions (Evaluator).
+    """Ведёт интервью: задаёт вопросы, отвечает на встречные вопросы.
+
+    НЕ проверяет факты (Observer) и НЕ принимает решение о найме (Evaluator).
     """
 
     def __init__(self, llm: BaseChatModel):
@@ -40,7 +39,6 @@ class InterviewerAgent(BaseAgent):
         return self._generate_message(state)
 
     async def _generate_message_async(self, state: InterviewState) -> dict[str, Any]:
-        """Async version of message generation."""
         if not state.get("turns"):
             return self._greeting_response(state)
 
@@ -71,31 +69,25 @@ class InterviewerAgent(BaseAgent):
             if observer_analysis
             else "Продолжай интервью, задай технический вопрос."
         )
-        
-        # Get user's counter-question if any
+
         user_question = ""
         if observer_analysis and observer_analysis.is_question_from_user:
             user_question = observer_analysis.user_question
-        
-        # Check if we should give a hint (candidate struggling multiple times)
+
         should_give_hint = False
         skipped_count = len(state.get("skipped_topics", []))
         evasion_count = state.get("evasion_count", 0)
         if skipped_count >= 2 or evasion_count >= 2:
-            # Candidate is struggling, offer hints
-            should_give_hint = state.get("hints_used", 0) < 3  # Max 3 hints per interview
-        
-        # Get suggested topics based on position
+            should_give_hint = state.get("hints_used", 0) < 3
+
         position = state.get("position", "")
         covered = state.get("covered_topics", [])
         skipped = state.get("skipped_topics", [])
         suggested_topics = self._get_suggested_topics(position, covered, skipped)
-        
-        # Determine interview phase
+
         interview_phase = state.get("interview_phase", "technical")
         turn_count = state.get("current_turn_id", 0)
-        
-        # Auto-detect wrap-up phase (near end of interview)
+
         if turn_count >= 8 and observer_analysis and observer_analysis.wants_to_end_interview:
             interview_phase = "wrap_up"
 
@@ -105,6 +97,7 @@ class InterviewerAgent(BaseAgent):
             experience=state.get("experience", ""),
             covered_topics=covered,
             skipped_topics=skipped,
+            candidate_mentioned=state.get("candidate_mentioned", []),
             current_difficulty=state.get("current_difficulty", 1),
             observer_instruction=instruction,
             conversation_history=self._build_history(state),
@@ -114,17 +107,17 @@ class InterviewerAgent(BaseAgent):
             interview_phase=interview_phase,
             is_first_message=False,
         )
-    
+
     def _get_suggested_topics(self, position: str, covered: list[str], skipped: list[str]) -> list[str]:
-        """Get suggested topics based on position that haven't been covered or skipped."""
+        """Получить рекомендуемые темы для позиции."""
         topics_bank = get_topics_for_position(position)
         suggested = []
-        
+
         for topic_key, topic in topics_bank.items():
             if topic.name not in covered and topic.name not in skipped:
                 suggested.append(topic.name)
-        
-        return suggested[:5]  # Return top 5 suggestions
+
+        return suggested[:5]
 
     def _format_response(self, state: InterviewState, message: str) -> dict[str, Any]:
         thoughts = self._generate_thoughts(state)
@@ -139,7 +132,7 @@ class InterviewerAgent(BaseAgent):
             return "Начало интервью"
 
         parts = []
-        for turn in turns[-CONTEXT_WINDOW_SIZE:]:
+        for turn in turns[-settings.context_window_size:]:
             parts.append(f"Интервьюер: {turn.agent_visible_message}")
             parts.append(f"Кандидат: {turn.user_message}")
 
@@ -150,7 +143,7 @@ class InterviewerAgent(BaseAgent):
         return "\n".join(parts)
 
     def _clean_message(self, message: str) -> str:
-        """Filter meta-text from LLM response."""
+        """Отфильтровать мета-текст из ответа LLM."""
         lines = []
         for line in message.strip().split("\n"):
             lower = line.lower().strip()
@@ -174,12 +167,3 @@ class InterviewerAgent(BaseAgent):
                 parts.append("Отвечаю на вопрос кандидата")
 
         return self.format_thoughts(". ".join(parts))
-
-
-def generate_greeting(position: str, name: str = "Алекс") -> str:
-    """Generate interview greeting message."""
-    return f"""Привет! Меня зовут {name}, я буду проводить сегодня техническое интервью на позицию {position}.
-
-Формат будет такой: я буду задавать технические вопросы разной сложности, ты отвечаешь как можешь. Если чего-то не знаешь — лучше честно сказать, чем выдумывать. Также можешь задавать мне встречные вопросы о компании или позиции.
-
-Давай начнём! Расскажи немного о себе и своём опыте."""

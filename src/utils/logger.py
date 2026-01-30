@@ -1,4 +1,4 @@
-"""JSON logger for interview sessions - matches specification format."""
+"""JSON-логгер для сессий интервью в формате спецификации."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from src.models.state import Turn
 
 
 class InterviewLogger:
-    """Logs interview sessions to JSON format per specification."""
+    """Логирует сессии интервью в JSON-формате по спецификации."""
 
     __slots__ = ("log_dir", "_log", "_file")
 
@@ -24,12 +24,13 @@ class InterviewLogger:
         self._file: Path | None = None
 
     def start_session(self, participant_name: str, position: str, grade: str, experience: str) -> Path:
-        """Initialize new session, return log file path."""
+        """Инициализировать новую сессию, вернуть путь к файлу лога."""
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         safe_name = "".join(c if c.isalnum() else "_" for c in participant_name)
         self._file = self.log_dir / f"interview_{safe_name}_{ts}.json"
 
         self._log = {
+            "format_version": "1.0",
             "participant_name": participant_name,
             "position": position,
             "grade": grade,
@@ -42,9 +43,9 @@ class InterviewLogger:
         return self._file
 
     def log_turn(self, turn: Turn) -> None:
-        """Append turn to log."""
+        """Добавить ход в лог."""
         if not self._log:
-            raise RuntimeError("No active session")
+            raise RuntimeError("Нет активной сессии")
 
         self._log["turns"].append({
             "turn_id": turn.turn_id,
@@ -55,9 +56,9 @@ class InterviewLogger:
         self._save()
 
     def log_feedback(self, feedback: FinalFeedback | dict) -> None:
-        """Set final feedback."""
+        """Записать финальный фидбэк."""
         if not self._log:
-            raise RuntimeError("No active session")
+            raise RuntimeError("Нет активной сессии")
 
         self._log["final_feedback"] = (
             feedback_to_log_dict(feedback) if isinstance(feedback, FinalFeedback) else feedback
@@ -66,9 +67,9 @@ class InterviewLogger:
         self._save()
 
     def end_session(self, feedback: FinalFeedback | dict | None = None) -> Path:
-        """Finalize and return log path."""
+        """Завершить сессию и вернуть путь к логу."""
         if not self._log:
-            raise RuntimeError("No active session")
+            raise RuntimeError("Нет активной сессии")
 
         if feedback:
             self.log_feedback(feedback)
@@ -90,5 +91,5 @@ class InterviewLogger:
 
 
 def load_interview_log(path: Path) -> dict[str, Any]:
-    """Load log from JSON file."""
+    """Загрузить лог из JSON-файла."""
     return json.loads(path.read_text(encoding="utf-8"))

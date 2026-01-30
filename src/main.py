@@ -1,4 +1,4 @@
-"""Interview Coach CLI."""
+"""CLI приложения Interview Coach."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ console = Console()
 
 
 def print_feedback(feedback: dict):
-    """Display structured feedback."""
+    """Вывести структурированный фидбэк."""
     console.print()
     console.print(Panel("[bold]ФИНАЛЬНЫЙ ФИДБЭК[/bold]", style="green"))
 
@@ -121,12 +121,15 @@ def interview(
         position = Prompt.ask("[cyan]Позиция[/cyan]", default="Backend Developer")
     
     normalized = normalize_position(position)
-    if not normalized:
-        console.print(f"[yellow]'{position}' не IT-позиция. Используем Backend Developer.[/yellow]")
-        position = "Backend Developer"
-    elif normalized != position:
+    while not normalized:
+        console.print(f"[yellow]'{position}' не поддерживается.[/yellow]")
+        console.print(f"[dim]Доступные: {', '.join(SUPPORTED_POSITIONS)}[/dim]")
+        position = Prompt.ask("[cyan]Позиция[/cyan]", default="Backend Developer")
+        normalized = normalize_position(position)
+    
+    if normalized != position:
         console.print(f"[dim]Позиция: {normalized}[/dim]")
-        position = normalized
+    position = normalized
     
     grade = grade or Prompt.ask("[cyan]Грейд[/cyan]", choices=["Junior", "Middle", "Senior"], default="Junior")
     experience = experience or Prompt.ask("[cyan]Опыт[/cyan]")
@@ -187,7 +190,7 @@ def interview(
 @app.command()
 def view_log(log_file: Path = typer.Argument(..., help="Путь к файлу лога")):
     """Просмотреть лог интервью."""
-    from src.utils.logger import load_interview_log
+    from src.utils.logger import load_interview_log  # noqa: PLC0415
 
     if not log_file.exists():
         console.print(f"[red]Файл не найден: {log_file}[/red]")

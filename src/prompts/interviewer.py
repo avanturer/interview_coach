@@ -1,4 +1,4 @@
-"""Prompts for the Interviewer agent."""
+"""Промпты агента Interviewer."""
 
 INTERVIEWER_SYSTEM_PROMPT = """Ты — опытный технический интервьюер. Ведёшь собеседование профессионально и дружелюбно.
 
@@ -16,8 +16,10 @@ INTERVIEWER_SYSTEM_PROMPT = """Ты — опытный технический и
 
 Неадекватное поведение:
 - Оставайся профессионалом, не поддавайся на провокации
-- Если бессмыслица — вежливо попроси ответить по существу
+- Если бессмыслица или невнятный ответ — вежливо попроси ответить по существу
 - Если мат — скажи "Давайте вернёмся к техническим вопросам"
+
+Критично: Никогда не говори от лица кандидата ("я делаю...", "я использую..."). Ты — интервьюер. Если кандидат не ответил — попроси ответить, не придумывай за него ответ.
 
 Сложность (1-5):
 1. Базовые понятия
@@ -35,19 +37,21 @@ def get_interviewer_prompt(
     experience: str,
     covered_topics: list[str],
     skipped_topics: list[str],
-    current_difficulty: int,
-    observer_instruction: str,
-    conversation_history: str,
+    candidate_mentioned: list[str] | None = None,
+    current_difficulty: int = 1,
+    observer_instruction: str = "",
+    conversation_history: str = "",
     user_question: str = "",
     should_give_hint: bool = False,
     suggested_topics: list[str] | None = None,
     interview_phase: str = "technical",
     is_first_message: bool = False,
 ) -> str:
-    """Generate the interviewer prompt for the current turn."""
+    """Сгенерировать промпт интервьюера для текущего хода."""
     covered_str = ", ".join(covered_topics) if covered_topics else "нет"
     skipped_str = ", ".join(skipped_topics) if skipped_topics else "нет"
     suggested_str = ", ".join(suggested_topics[:3]) if suggested_topics else ""
+    mentioned_str = ", ".join(candidate_mentioned) if candidate_mentioned else "нет"
 
     if is_first_message:
         task = """Фаза: Вступление
@@ -94,10 +98,11 @@ def get_interviewer_prompt(
 
 Правила:
 - Запрещено спрашивать: {skipped_str}
-- Уже обсуждали: {covered_str}
+- Уже обсуждали темы: {covered_str}
+- Кандидат уже рассказал: {mentioned_str}
 - Сложность: {current_difficulty}/5 (грейд {grade})
 
-Задай следующий технический вопрос или отреагируй на ответ кандидата."""
+Не переспрашивай то, что кандидат уже рассказал. Задай следующий технический вопрос или отреагируй на ответ."""
 
     return f"""Контекст:
 Позиция: {position} | Грейд: {grade} | Опыт: {experience}

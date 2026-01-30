@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
-"""Script for running interview scenarios from file or interactively.
+"""Скрипт для запуска сценариев интервью из файла или интерактивно.
 
-Usage:
-    # Run scenario from file
-    python run_scenario.py scenario.txt
-    
-    # Run interactively
-    python run_scenario.py
-    
-Scenario file format (one message per line):
+Использование:
+    python run_scenario.py scenario.txt  # Из файла
+    python run_scenario.py               # Интерактивно
+
+Формат файла сценария:
+    name: Алекс
+    position: Backend Developer
+    grade: Junior
+    experience: Python, SQL
+    ---
     Привет, я Алекс, Junior Backend Developer
     Переменные в Python - это контейнеры для данных
     Стоп игра. Давай фидбэк
@@ -22,12 +24,12 @@ from pathlib import Path
 from rich.console import Console
 from rich.panel import Panel
 
-# Add src to path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from src.config import settings
 from src.constants import VERSION
 from src.graph.interview_graph import InterviewSession
+from src.topics import SUPPORTED_POSITIONS, normalize_position
 from src.utils.logger import InterviewLogger
 
 console = Console()
@@ -36,11 +38,17 @@ console = Console()
 def run_scenario(
     messages: list[str],
     name: str = "Тест",
-    position: str = "Backend Developer", 
+    position: str = "Backend Developer",
     grade: str = "Junior",
     experience: str = "Python, SQL",
 ) -> Path:
-    """Run a scenario and return the log file path."""
+    """Запустить сценарий и вернуть путь к файлу лога."""
+    normalized = normalize_position(position)
+    if not normalized:
+        console.print(f"[red]Ошибка: '{position}' не поддерживается.[/red]")
+        console.print(f"[dim]Доступные: {', '.join(SUPPORTED_POSITIONS)}[/dim]")
+        sys.exit(1)
+    position = normalized
     
     console.print(f"\n[bold cyan]Interview Coach v{VERSION}[/bold cyan]")
     console.print(f"[dim]Кандидат: {name} | Позиция: {position} | Грейд: {grade}[/dim]\n")
@@ -48,7 +56,6 @@ def run_scenario(
     session = InterviewSession()
     logger = InterviewLogger()
     
-    # Initialize
     greeting = session.initialize(name, position, grade, experience)
     log_file = logger.start_session(name, position, grade, experience)
     
@@ -80,7 +87,7 @@ def run_scenario(
 
 
 def _print_feedback_summary(feedback: dict):
-    """Print brief feedback summary."""
+    """Вывести краткое резюме фидбэка."""
     decision = feedback.get("decision", {})
     console.print(f"  Грейд: {decision.get('assessed_grade', '?')}")
     console.print(f"  Рекомендация: {decision.get('hiring_recommendation', '?')}")
@@ -92,19 +99,7 @@ def _print_feedback_summary(feedback: dict):
 
 
 def load_scenario(file_path: Path) -> tuple[dict, list[str]]:
-    """Load scenario from file.
-    
-    Format:
-        # Comment lines start with #
-        name: Алекс
-        position: Backend Developer
-        grade: Junior
-        experience: Python, SQL
-        ---
-        Привет, я Алекс
-        Переменные это контейнеры
-        Стоп
-    """
+    """Загрузить сценарий из файла."""
     lines = file_path.read_text(encoding="utf-8").strip().split("\n")
     
     metadata = {
