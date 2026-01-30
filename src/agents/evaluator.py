@@ -104,6 +104,12 @@ class EvaluatorAgent(BaseAgent):
             match = re.search(r"\{[\s\S]*\}", response)
             data = json.loads(match.group() if match else response)
 
+            def _clamp(val: int | float, lo: int, hi: int, default: int) -> int:
+                try:
+                    return max(lo, min(hi, int(val)))
+                except (ValueError, TypeError):
+                    return default
+
             decision_data = data.get("decision", {})
             grade_match_raw = decision_data.get("grade_match", "match")
             grade_match = grade_match_raw if grade_match_raw in ("match", "overqualified", "underqualified") else "match"
@@ -112,7 +118,7 @@ class EvaluatorAgent(BaseAgent):
                 assessed_grade=decision_data.get("assessed_grade", state.get("grade", "Junior")),
                 target_grade=decision_data.get("target_grade", state.get("grade", "")),
                 hiring_recommendation=decision_data.get("hiring_recommendation", "No Hire"),
-                confidence_score=int(decision_data.get("confidence_score", 50)),
+                confidence_score=_clamp(decision_data.get("confidence_score", 50), 0, 100, 50),
                 grade_match=grade_match,
                 summary=decision_data.get("summary", "Оценка не завершена."),
             )
@@ -140,16 +146,16 @@ class EvaluatorAgent(BaseAgent):
             hard_skills = HardSkillsAnalysis(
                 confirmed_skills=hard_data.get("confirmed_skills", []),
                 knowledge_gaps=gaps,
-                technical_depth=int(hard_data.get("technical_depth", 5)),
+                technical_depth=_clamp(hard_data.get("technical_depth", 5), 1, 10, 5),
                 notes=hard_data.get("notes", ""),
             )
 
             soft_data = data.get("soft_skills", {})
             soft_skills = SoftSkillsAnalysis(
-                clarity=int(soft_data.get("clarity", 5)),
-                honesty=int(soft_data.get("honesty", 5)),
-                engagement=int(soft_data.get("engagement", 5)),
-                problem_solving=int(soft_data.get("problem_solving", 5)),
+                clarity=_clamp(soft_data.get("clarity", 5), 1, 10, 5),
+                honesty=_clamp(soft_data.get("honesty", 5), 1, 10, 5),
+                engagement=_clamp(soft_data.get("engagement", 5), 1, 10, 5),
+                problem_solving=_clamp(soft_data.get("problem_solving", 5), 1, 10, 5),
                 communication_style=soft_data.get("communication_style", ""),
                 red_flags=soft_data.get("red_flags", []),
             )

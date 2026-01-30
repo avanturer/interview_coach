@@ -8,6 +8,7 @@ from langchain_core.language_models import BaseChatModel
 
 from src.agents.base import BaseAgent
 from src.config import settings
+from src.constants import QUALITY_GOOD
 from src.models.state import InterviewState
 from src.prompts.interviewer import (
     GREETING_TEMPLATE,
@@ -77,7 +78,13 @@ class InterviewerAgent(BaseAgent):
         should_give_hint = False
         skipped_count = len(state.get("skipped_topics", []))
         evasion_count = state.get("evasion_count", 0)
-        if skipped_count >= 2 or evasion_count >= 2:
+        current_ok = False
+        if observer_analysis:
+            current_ok = (
+                observer_analysis.topic_covered
+                or observer_analysis.answer_quality >= QUALITY_GOOD
+            )
+        if (skipped_count >= 2 or evasion_count >= 2) and not current_ok:
             should_give_hint = state.get("hints_used", 0) < 3
 
         position = state.get("position", "")

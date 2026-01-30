@@ -67,7 +67,7 @@ class ObserverAnalysis(BaseModel):
     clarity_score: int = Field(default=5, ge=1, le=10)
     showed_honesty: bool = False
     showed_engagement: bool = False
-    mentioned_info: list[str] = Field(default_factory=list)  # что кандидат упомянул о себе
+    mentioned_info: list[str] = Field(default_factory=list)
 
 
 class InterviewState(TypedDict, total=False):
@@ -84,7 +84,7 @@ class InterviewState(TypedDict, total=False):
     covered_topics: list[str]
     skipped_topics: list[str]
     skill_scores: dict[str, SkillScore]
-    candidate_mentioned: list[str]  # что кандидат рассказал о себе
+    candidate_mentioned: list[str]
 
     interview_phase: str
     technical_questions_count: int

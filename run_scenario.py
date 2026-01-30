@@ -44,6 +44,7 @@ def run_scenario(
     grade: str = "Junior",
     experience: str = "Python, SQL",
     output_name: str | None = None,
+    participant_name_for_submission: str | None = None,
 ) -> Path:
     """Запустить сценарий и вернуть путь к файлу лога."""
     normalized = normalize_position(position)
@@ -64,13 +65,11 @@ def run_scenario(
     
     console.print(Panel(greeting, title="Интервьюер", border_style="blue"))
     
-    # Process each message
     for i, msg in enumerate(messages, 1):
         console.print(f"\n[green]Кандидат ({i}/{len(messages)}):[/green] {msg}")
         
         response, is_finished, feedback = session.process_user_input(msg)
         
-        # Log turn
         if state := session.get_state():
             if turns := state.get("turns"):
                 logger.log_turn(turns[-1])
@@ -90,9 +89,14 @@ def run_scenario(
         target = Path(output_name)
         if not target.is_absolute():
             target = Path("logs") / target
-        export_for_submission(log_data, target, last_feedback)
+        export_for_submission(
+            log_data, target, last_feedback,
+            participant_name=participant_name_for_submission,
+        )
         console.print(f"\n[bold]Лог: {final_log}[/bold]")
         console.print(f"[bold]Файл для сдачи (формат 1:1): {target}[/bold]")
+        if participant_name_for_submission:
+            console.print(f"[dim]participant_name в JSON: {participant_name_for_submission}[/dim]")
         return target
 
     console.print(f"\n[bold]Лог сохранён: {final_log}[/bold]")
@@ -146,14 +150,34 @@ def load_scenario(file_path: Path) -> tuple[dict, list[str]]:
     return metadata, messages
 
 
+def _parse_args():
+    """Парсинг аргументов: scenario.txt [output.json] [--participant "ФИО"]."""
+    argv = sys.argv[1:]
+    participant = None
+    skip_next = False
+    pos_args = []
+    for i, a in enumerate(argv):
+        if skip_next:
+            skip_next = False
+            continue
+        if a == "--participant" and i + 1 < len(argv):
+            participant = argv[i + 1]
+            skip_next = True
+            continue
+        pos_args.append(a)
+    scenario_file = Path(pos_args[0]) if pos_args else None
+    output_name = pos_args[1] if len(pos_args) > 1 else None
+    return scenario_file, output_name, participant
+
+
 def main():
-    # Check API key
     if not settings.mistral_api_key:
         console.print("[red]Ошибка: MISTRAL_API_KEY не настроен в .env[/red]")
         sys.exit(1)
-    
-    if len(sys.argv) > 1:
-        scenario_file = Path(sys.argv[1])
+
+    scenario_file, output_name, participant_for_submission = _parse_args()
+
+    if scenario_file:
         if not scenario_file.exists():
             console.print(f"[red]Файл не найден: {scenario_file}[/red]")
             sys.exit(1)
@@ -163,7 +187,15 @@ def main():
             console.print("[red]Сценарий пустой[/red]")
             sys.exit(1)
 
-        output_name = sys.argv[2] if len(sys.argv) > 2 else None
+        if output_name and not participant_for_submission:
+            from rich.prompt import Prompt
+            participant_for_submission = Prompt.ask(
+                "[yellow]ФИО для participant_name в JSON (для жюри)[/yellow]",
+                default="",
+            ).strip()
+            if not participant_for_submission:
+                console.print("[yellow]participant_name будет из сценария. Для сдачи укажите --participant \"Ваше ФИО\"[/yellow]")
+
         run_scenario(
             messages,
             name=metadata["name"],
@@ -171,9 +203,9 @@ def main():
             grade=metadata["grade"],
             experience=metadata["experience"],
             output_name=output_name,
+            participant_name_for_submission=participant_for_submission or None,
         )
     else:
-        # Interactive mode
         console.print("[bold]Интерактивный режим[/bold]")
         console.print("[dim]Введите данные кандидата:[/dim]\n")
         
@@ -193,7 +225,6 @@ def main():
                 if msg.strip():
                     messages.append(msg)
                     
-                    # Check for stop signals
                     if any(s in msg.lower() for s in ["стоп", "stop", "фидбэк"]):
                         break
         except KeyboardInterrupt:

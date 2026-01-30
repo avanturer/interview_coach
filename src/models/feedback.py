@@ -131,17 +131,23 @@ def feedback_to_log_dict(feedback: FinalFeedback) -> dict:
 
 
 def feedback_to_submission_string(feedback: FinalFeedback) -> str:
-    """Конвертировать фидбэк в строку для формата сдачи (инструкция 1:1)."""
+    """Конвертировать фидбэк в строку для формата сдачи (инструкция 1:1).
+
+    Строка с Markdown-заголовками ### для парсеров жюри.
+    """
     d = feedback.decision
     b = feedback.behavior
     h = feedback.hard_skills
     s = feedback.soft_skills
 
     parts = [
-        f"Вердикт: {d.assessed_grade} | {d.hiring_recommendation} | Уверенность: {d.confidence_score}%",
+        "### Вердикт",
+        f"**{d.assessed_grade}** | {d.hiring_recommendation} | Уверенность: {d.confidence_score}%",
+        "",
+        "### Резюме",
         d.summary,
         "",
-        "Hard Skills:",
+        "### Hard Skills",
         f"Подтверждено: {', '.join(h.confirmed_skills) or 'нет'}",
     ]
     for gap in h.knowledge_gaps:
@@ -149,9 +155,13 @@ def feedback_to_submission_string(feedback: FinalFeedback) -> str:
         parts.append(f"- {gap.topic}: правильный ответ — {ans}")
     parts.extend([
         "",
-        f"Soft Skills: Ясность {s.clarity}/10 | Честность {s.honesty}/10 | Вовлечённость {s.engagement}/10",
-        f"Roadmap: {', '.join(r.topic for r in feedback.roadmap)}",
+        "### Soft Skills",
+        f"Ясность {s.clarity}/10 | Честность {s.honesty}/10 | Вовлечённость {s.engagement}/10",
         "",
+        "### Roadmap",
+        ", ".join(r.topic for r in feedback.roadmap),
+        "",
+        "### Итог",
         feedback.interview_summary or "",
     ])
     return "\n".join(parts).strip()

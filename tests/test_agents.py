@@ -172,7 +172,6 @@ class TestLogger:
         """Тест жизненного цикла сессии логгера."""
         logger = InterviewLogger(log_dir=tmp_path)
 
-        # Start session
         log_file = logger.start_session(
             participant_name="Тест",
             position="Developer",
@@ -183,7 +182,6 @@ class TestLogger:
         assert log_file.exists()
         assert "Тест" in log_file.stem or "test" in log_file.stem.lower()
 
-        # Log a turn
         turn = Turn(
             turn_id=1,
             agent_visible_message="Привет!",
@@ -192,16 +190,13 @@ class TestLogger:
         )
         logger.log_turn(turn)
 
-        # Check log contents
         current_log = logger.get_current_log()
         assert len(current_log["turns"]) == 1
         assert current_log["turns"][0]["turn_id"] == 1
 
-        # End session
         final_log_file = logger.end_session()
         assert final_log_file.exists()
 
-        # Verify JSON content
         with open(final_log_file) as f:
             saved_log = json.load(f)
 
@@ -244,11 +239,9 @@ class TestScenario:
         analysis_end = ObserverAnalysis(wants_to_end_interview=True)
         assert analysis_end.wants_to_end_interview is True
 
-        # Test wants_to_skip
         analysis_skip = ObserverAnalysis(wants_to_skip=True)
         assert analysis_skip.wants_to_skip is True
 
-        # Test topic_covered
         analysis_covered = ObserverAnalysis(topic_covered=True, answer_quality=8)
         assert analysis_covered.topic_covered is True
         assert analysis_covered.answer_quality == 8

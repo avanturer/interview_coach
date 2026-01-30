@@ -103,10 +103,14 @@ def export_for_submission(
     log_data: dict[str, Any],
     output_path: Path,
     feedback: FinalFeedback | dict | None = None,
+    participant_name: str | None = None,
 ) -> Path:
-    """Экспорт в формат инструкции 1:1: participant_name, turns, final_feedback (строка)."""
+    """Экспорт в формат инструкции 1:1: participant_name, turns, final_feedback (строка).
+
+    participant_name: ФИО студента для жюри (не персонаж сценария). Если не задано — берётся из log_data.
+    """
     out = {
-        "participant_name": log_data.get("participant_name", ""),
+        "participant_name": participant_name if participant_name else log_data.get("participant_name", ""),
         "turns": [
             {
                 "turn_id": t.get("turn_id"),
@@ -134,15 +138,18 @@ def export_for_submission(
 
 
 def _dict_feedback_to_string(fb: dict) -> str:
-    """Конвертировать dict-фидбэк в строку."""
+    """Конвертировать dict-фидбэк в строку с Markdown-заголовками ###."""
     d = fb.get("decision", {})
     h = fb.get("hard_skills", {})
     s = fb.get("soft_skills", {})
     parts = [
-        f"Вердикт: {d.get('assessed_grade', d.get('grade', '?'))} | {d.get('hiring_recommendation', '?')} | {d.get('confidence_score', 0)}%",
+        "### Вердикт",
+        f"**{d.get('assessed_grade', d.get('grade', '?'))}** | {d.get('hiring_recommendation', '?')} | Уверенность: {d.get('confidence_score', 0)}%",
+        "",
+        "### Резюме",
         d.get("summary", ""),
         "",
-        "Hard Skills:",
+        "### Hard Skills",
         f"Подтверждено: {', '.join(h.get('confirmed_skills', h.get('confirmed', [])) or []) or 'нет'}",
     ]
     for gap in h.get("knowledge_gaps", h.get("gaps", [])):
@@ -152,9 +159,13 @@ def _dict_feedback_to_string(fb: dict) -> str:
         parts.append(f"- {gap.get('topic', '?')}: {ans}")
     parts.extend([
         "",
-        f"Soft Skills: Ясность {s.get('clarity', '-')}/10 | Честность {s.get('honesty', '-')}/10",
-        f"Roadmap: {', '.join(r.get('topic', '') for r in fb.get('roadmap', []))}",
+        "### Soft Skills",
+        f"Ясность {s.get('clarity', '-')}/10 | Честность {s.get('honesty', '-')}/10 | Вовлечённость {s.get('engagement', '-')}/10",
         "",
+        "### Roadmap",
+        ", ".join(r.get("topic", "") for r in fb.get("roadmap", [])),
+        "",
+        "### Итог",
         fb.get("interview_summary", ""),
     ])
     return "\n".join(parts).strip()
