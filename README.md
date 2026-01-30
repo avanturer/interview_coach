@@ -71,7 +71,7 @@ pip install -r requirements.txt
 copy .env.example .env
 ```
 
-В `.env` прописать `MISTRAL_API_KEY` — ключ бесплатно берётся на https://console.mistral.ai/
+В `.env` указать `MISTRAL_API_KEY` (https://console.mistral.ai/)
 
 ## Запуск
 
@@ -92,9 +92,8 @@ python run_scenario.py scenarios/example_scenario.txt
 
 Файл для сдачи в формате инструкции:
 ```bash
-python run_scenario.py scenarios/example_scenario.txt interview_log_1.json --participant "Иван Иванович Иванов"
+python run_scenario.py scenarios/example_scenario.txt interview_log_1.json --participant "ФИО"
 ```
-Скрипт спросит ФИО, если `--participant` не указан. **participant_name в JSON — твоё реальное ФИО для жюри**, не персонаж сценария (Алекс). Модель обращается к герою сценария, но в логе — твоё имя.
 
 ## Пример работы
 
@@ -123,7 +122,7 @@ python run_scenario.py scenarios/example_scenario.txt interview_log_1.json --par
 
 При интерактивном запуске — `logs/interview_{имя}_{дата}.json` (полный формат).
 
-При `run_scenario ... interview_log_N.json` — файл в формате инструкции: только `participant_name`, `turns`, `final_feedback` строкой. Его и загружать в форму. **participant_name** — твоё ФИО (для сопоставления с базой студентов), не имя персонажа сценария.
+При `run_scenario ... interview_log_N.json` — файл для сдачи: `participant_name`, `turns`, `final_feedback` строкой.
 
 ## Конфиг
 
@@ -155,9 +154,5 @@ src/
 ├── topics.py         — банки вопросов по позициям
 └── utils/            — логгер
 ```
-
-## Итог
-
-ТЗ закрыто: 3 агента, скрытая рефлексия в логах (`internal_thoughts`), контекстное окно, адаптивная сложность, устойчивость к галлюцинациям и off-topic. Отдельный Evaluator, семантический стоп-интент, английский по запросу, честная валидация позиций, лог в формате инструкции без ручной правки. Пробелы с правильными ответами, soft skills по ходу, grade mismatch, антиспам, разные температуры агентов.
 
 Оркин Родион, MegaSchool

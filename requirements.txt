@@ -1,4 +1,4 @@
-# Python 3.10+ обязательно (на 3.9 падают зависимости)
+# Python 3.10+
 langgraph>=0.2.0
 langchain-core>=0.3.0
 langchain-mistralai>=0.2.0
