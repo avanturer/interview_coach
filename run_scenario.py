@@ -18,6 +18,7 @@
 
 from __future__ import annotations
 
+import shutil
 import sys
 from pathlib import Path
 
@@ -41,6 +42,7 @@ def run_scenario(
     position: str = "Backend Developer",
     grade: str = "Junior",
     experience: str = "Python, SQL",
+    output_name: str | None = None,
 ) -> Path:
     """Запустить сценарий и вернуть путь к файлу лога."""
     normalized = normalize_position(position)
@@ -81,8 +83,18 @@ def run_scenario(
             break
     
     final_log = logger.end_session()
+
+    if output_name:
+        target = Path(output_name)
+        if not target.is_absolute():
+            target = Path("logs") / target
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(final_log, target)
+        console.print(f"\n[bold]Лог: {final_log}[/bold]")
+        console.print(f"[bold]Копия для сдачи: {target}[/bold]")
+        return target
+
     console.print(f"\n[bold]Лог сохранён: {final_log}[/bold]")
-    
     return final_log
 
 
@@ -140,23 +152,24 @@ def main():
         sys.exit(1)
     
     if len(sys.argv) > 1:
-        # Run from file
         scenario_file = Path(sys.argv[1])
         if not scenario_file.exists():
             console.print(f"[red]Файл не найден: {scenario_file}[/red]")
             sys.exit(1)
-        
+
         metadata, messages = load_scenario(scenario_file)
         if not messages:
             console.print("[red]Сценарий пустой[/red]")
             sys.exit(1)
-        
+
+        output_name = sys.argv[2] if len(sys.argv) > 2 else None
         run_scenario(
             messages,
             name=metadata["name"],
             position=metadata["position"],
             grade=metadata["grade"],
             experience=metadata["experience"],
+            output_name=output_name,
         )
     else:
         # Interactive mode
