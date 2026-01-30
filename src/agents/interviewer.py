@@ -84,8 +84,11 @@ class InterviewerAgent(BaseAgent):
                 observer_analysis.topic_covered
                 or observer_analysis.answer_quality >= QUALITY_GOOD
             )
-        if (skipped_count >= 2 or evasion_count >= 2) and not current_ok:
-            should_give_hint = state.get("hints_used", 0) < 3
+        if (
+            skipped_count >= settings.hint_skipped_threshold
+            or evasion_count >= settings.hint_evasion_threshold
+        ) and not current_ok:
+            should_give_hint = state.get("hints_used", 0) < settings.max_hints
 
         position = state.get("position", "")
         covered = state.get("covered_topics", [])
@@ -95,7 +98,8 @@ class InterviewerAgent(BaseAgent):
         interview_phase = state.get("interview_phase", "technical")
         turn_count = state.get("current_turn_id", 0)
 
-        if turn_count >= 8 and observer_analysis and observer_analysis.wants_to_end_interview:
+        wrap_up_threshold = max(1, settings.max_turns - 2)
+        if turn_count >= wrap_up_threshold and observer_analysis and observer_analysis.wants_to_end_interview:
             interview_phase = "wrap_up"
 
         return get_interviewer_prompt(

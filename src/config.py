@@ -27,6 +27,10 @@ class Settings(BaseSettings):
 
     max_spam_count: int = 3
     max_evasion_count: int = 5
+    repeated_evasion_threshold: int = 3
+    hint_evasion_threshold: int = 2
+    hint_skipped_threshold: int = 2
+    max_hints: int = 3
 
     temp_interviewer: float = 0.7
     temp_observer: float = 0.3

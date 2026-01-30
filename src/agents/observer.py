@@ -116,7 +116,7 @@ class ObserverAgent(BaseAgent):
             soft_tracker.engagement_signals.append("showed_interest")
         if analysis.is_confident_nonsense:
             soft_tracker.red_flags.append("confident_nonsense")
-        if analysis.is_evasive and evasion_count >= 3:
+        if analysis.is_evasive and evasion_count >= settings.repeated_evasion_threshold:
             soft_tracker.red_flags.append("repeated_evasion")
         if analysis.is_spam_or_troll:
             soft_tracker.red_flags.append("spam_or_troll")
@@ -238,6 +238,7 @@ class ObserverAgent(BaseAgent):
         explicit_stops = (
             "стоп", "stop", "хватит", "закончим", "всё", "конец",
             "финиш", "заканчиваем", "завершаем", "достаточно", "пока",
+            "give me feedback", "фидбек", "фидбэк",
         )
 
         if len(msg_lower) < 50:
