@@ -128,3 +128,30 @@ def feedback_to_log_dict(feedback: FinalFeedback) -> dict:
         "interview_summary": feedback.interview_summary,
         "total_turns": feedback.total_turns,
     }
+
+
+def feedback_to_submission_string(feedback: FinalFeedback) -> str:
+    """Конвертировать фидбэк в строку для формата сдачи (инструкция 1:1)."""
+    d = feedback.decision
+    b = feedback.behavior
+    h = feedback.hard_skills
+    s = feedback.soft_skills
+
+    parts = [
+        f"Вердикт: {d.assessed_grade} | {d.hiring_recommendation} | Уверенность: {d.confidence_score}%",
+        d.summary,
+        "",
+        "Hard Skills:",
+        f"Подтверждено: {', '.join(h.confirmed_skills) or 'нет'}",
+    ]
+    for gap in h.knowledge_gaps:
+        ans = gap.correct_answer[:200] + "..." if len(gap.correct_answer) > 200 else gap.correct_answer
+        parts.append(f"- {gap.topic}: правильный ответ — {ans}")
+    parts.extend([
+        "",
+        f"Soft Skills: Ясность {s.clarity}/10 | Честность {s.honesty}/10 | Вовлечённость {s.engagement}/10",
+        f"Roadmap: {', '.join(r.topic for r in feedback.roadmap)}",
+        "",
+        feedback.interview_summary or "",
+    ])
+    return "\n".join(parts).strip()

@@ -18,7 +18,7 @@
 
 from __future__ import annotations
 
-import shutil
+import json
 import sys
 from pathlib import Path
 
@@ -31,7 +31,8 @@ from src.config import settings
 from src.constants import VERSION
 from src.graph.interview_graph import InterviewSession
 from src.topics import SUPPORTED_POSITIONS, normalize_position
-from src.utils.logger import InterviewLogger
+from src.main import print_feedback
+from src.utils.logger import InterviewLogger, export_for_submission
 
 console = Console()
 
@@ -78,20 +79,20 @@ def run_scenario(
         
         if is_finished and feedback:
             logger.log_feedback(feedback)
-            console.print("\n[bold green]Фидбэк получен![/bold green]")
-            _print_feedback_summary(feedback)
+            print_feedback(feedback)
             break
-    
+
     final_log = logger.end_session()
+    log_data = json.loads(final_log.read_text(encoding="utf-8"))
+    last_feedback = feedback if (is_finished and feedback) else None
 
     if output_name:
         target = Path(output_name)
         if not target.is_absolute():
             target = Path("logs") / target
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(final_log, target)
+        export_for_submission(log_data, target, last_feedback)
         console.print(f"\n[bold]Лог: {final_log}[/bold]")
-        console.print(f"[bold]Копия для сдачи: {target}[/bold]")
+        console.print(f"[bold]Файл для сдачи (формат 1:1): {target}[/bold]")
         return target
 
     console.print(f"\n[bold]Лог сохранён: {final_log}[/bold]")

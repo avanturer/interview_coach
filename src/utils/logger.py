@@ -8,7 +8,11 @@ from pathlib import Path
 from typing import Any
 
 from src.config import settings
-from src.models.feedback import FinalFeedback, feedback_to_log_dict
+from src.models.feedback import (
+    FinalFeedback,
+    feedback_to_log_dict,
+    feedback_to_submission_string,
+)
 from src.models.state import Turn
 
 
@@ -93,3 +97,64 @@ class InterviewLogger:
 def load_interview_log(path: Path) -> dict[str, Any]:
     """Загрузить лог из JSON-файла."""
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def export_for_submission(
+    log_data: dict[str, Any],
+    output_path: Path,
+    feedback: FinalFeedback | dict | None = None,
+) -> Path:
+    """Экспорт в формат инструкции 1:1: participant_name, turns, final_feedback (строка)."""
+    out = {
+        "participant_name": log_data.get("participant_name", ""),
+        "turns": [
+            {
+                "turn_id": t.get("turn_id"),
+                "agent_visible_message": t.get("agent_visible_message", ""),
+                "user_message": t.get("user_message", ""),
+                "internal_thoughts": t.get("internal_thoughts", ""),
+            }
+            for t in log_data.get("turns", [])
+        ],
+        "final_feedback": "",
+    }
+
+    if feedback:
+        if isinstance(feedback, FinalFeedback):
+            out["final_feedback"] = feedback_to_submission_string(feedback)
+        elif isinstance(feedback, dict):
+            fb_obj = log_data.get("final_feedback", feedback)
+            out["final_feedback"] = _dict_feedback_to_string(fb_obj)
+    elif ff := log_data.get("final_feedback"):
+        out["final_feedback"] = _dict_feedback_to_string(ff) if isinstance(ff, dict) else str(ff)
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    return output_path
+
+
+def _dict_feedback_to_string(fb: dict) -> str:
+    """Конвертировать dict-фидбэк в строку."""
+    d = fb.get("decision", {})
+    h = fb.get("hard_skills", {})
+    s = fb.get("soft_skills", {})
+    parts = [
+        f"Вердикт: {d.get('assessed_grade', d.get('grade', '?'))} | {d.get('hiring_recommendation', '?')} | {d.get('confidence_score', 0)}%",
+        d.get("summary", ""),
+        "",
+        "Hard Skills:",
+        f"Подтверждено: {', '.join(h.get('confirmed_skills', h.get('confirmed', [])) or []) or 'нет'}",
+    ]
+    for gap in h.get("knowledge_gaps", h.get("gaps", [])):
+        ans = gap.get("correct_answer", "")[:200]
+        if len(gap.get("correct_answer", "")) > 200:
+            ans += "..."
+        parts.append(f"- {gap.get('topic', '?')}: {ans}")
+    parts.extend([
+        "",
+        f"Soft Skills: Ясность {s.get('clarity', '-')}/10 | Честность {s.get('honesty', '-')}/10",
+        f"Roadmap: {', '.join(r.get('topic', '') for r in fb.get('roadmap', []))}",
+        "",
+        fb.get("interview_summary", ""),
+    ])
+    return "\n".join(parts).strip()

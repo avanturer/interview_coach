@@ -1,151 +1,141 @@
 # Interview Coach
 
-Мультиагентная система для технических интервью. Три агента (Interviewer, Observer, Evaluator) проводят собеседование, анализируют ответы и выдают фидбэк.
+Система для технических интервью на базе нескольких AI-агентов. Проводит собеседование, анализирует ответы и выдаёт структурированный фидбэк.
+
+## Что умеет
+
+- **7 позиций**: Backend, Frontend, ML Engineer, DevOps, Data Analyst, QA, Fullstack
+- **Адаптивная сложность** — вопросы усложняются или упрощаются в зависимости от ответов
+- **Детекция галлюцинаций** — если кандидат уверенно несёт чушь (типа «Python 4.0 уберёт циклы»), система это ловит
+- **Встречные вопросы** — если кандидат спрашивает про испытательный срок или стек, интервьюер отвечает
+- **Семантическое завершение** — понимает «давай фидбэк», «хватит», «give me feedback» без жёсткого списка слов
+- **Английский** — по запросу кандидата можно переключить язык интервью
+
+## Как устроено
+
+Три агента работают по цепочке:
+
+1. **Interviewer** — задаёт вопросы, реагирует на ответы, даёт подсказки
+2. **Observer** — анализирует каждый ответ «за кулисами»: качество, галлюцинации, уклонения, инструкции для интервьюера
+3. **Evaluator** — в конце собирает всё в фидбэк: грейд, рекомендация Hire/No Hire, пробелы с правильными ответами, roadmap
+
+Observer не общается с кандидатом напрямую — он только пишет инструкции Interviewer. В логах видно эти «внутренние мысли».
 
 ## Установка
 
+Нужен **Python 3.10 или выше** — на 3.9 зависимости не встанут.
+
+**Linux / macOS:**
 ```bash
-# Клонировать и перейти в директорию
 cd interview_coach
-
-# Создать виртуальное окружение
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# Установить зависимости
+python3 -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
-
-# Скопировать конфиг
 cp .env.example .env
 ```
 
-Открыть `.env` и вставить API-ключ Mistral (бесплатно на https://console.mistral.ai/):
+**Windows (cmd):**
+```cmd
+cd interview_coach
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env
+```
 
+**Windows (PowerShell):**
+```powershell
+cd interview_coach
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+copy .env.example .env
 ```
-MISTRAL_API_KEY=ваш_ключ
-```
+
+В `.env` прописать `MISTRAL_API_KEY` — ключ бесплатно берётся на https://console.mistral.ai/
 
 ## Запуск
 
+Интерактивно:
 ```bash
-# Интерактивное интервью
 python -m src.main interview
+```
 
-# С параметрами
-python -m src.main interview --name "Алекс" --position "Backend Developer" --grade "Junior"
+С параметрами (без вопросов):
+```bash
+python -m src.main interview -n "Иван" -p "Backend Developer" -g "Junior" -e "1 год"
+```
 
-# Из файла сценария
+Из файла сценария (для прогона тестовых сценариев):
+```bash
 python run_scenario.py scenarios/example_scenario.txt
 ```
 
-## Как работает
-
-```
-Пользователь → Interviewer → Observer → Interviewer → ...
-                    ↓
-               Evaluator → Фидбэк
-```
-
-**Interviewer** — задаёт вопросы, реагирует на ответы, даёт подсказки.
-
-**Observer** — анализирует ответы за кулисами: качество, галлюцинации, уклонения. Даёт инструкции Interviewer.
-
-**Evaluator** — генерирует финальный фидбэк: грейд, рекомендация, пробелы с правильными ответами, roadmap.
-
-## Поддерживаемые позиции
-
-- Backend Developer
-- Frontend Developer  
-- ML Engineer
-- DevOps
-- Data Analyst
-- QA
-- Fullstack
-
-## Формат лога
-
-```json
-{
-  "participant_name": "Алекс",
-  "position": "Backend Developer",
-  "grade": "Junior",
-  "turns": [
-    {
-      "turn_id": 1,
-      "agent_visible_message": "Привет! Расскажи о себе.",
-      "user_message": "Я джун, пишу на Python.",
-      "internal_thoughts": "[Observer]: Кандидат представился. [Interviewer]: Задаю вопрос по основам."
-    }
-  ],
-  "final_feedback": {
-    "decision": {
-      "assessed_grade": "Junior",
-      "hiring_recommendation": "Hire",
-      "confidence_score": 75
-    },
-    "hard_skills": {...},
-    "soft_skills": {...},
-    "roadmap": [...]
-  }
-}
-```
-
-## Конфигурация
-
-Все настройки в `.env`:
-
-| Параметр | По умолчанию | Описание |
-|----------|-------------|----------|
-| `LLM_PROVIDER` | mistral | Провайдер (mistral/openai) |
-| `LLM_MODEL` | mistral-large-latest | Модель |
-| `MAX_TURNS` | 10 | Максимум вопросов |
-| `CONTEXT_WINDOW_SIZE` | 5 | Окно контекста (ходов) |
-| `MAX_SPAM_COUNT` | 3 | Лимит спама до завершения |
-| `MAX_EVASION_COUNT` | 5 | Лимит уклонений до завершения |
-
-## Команды
-
+Файл для сдачи в формате инструкции:
 ```bash
-# Запустить интервью
-python -m src.main interview
-
-# Просмотреть лог
-python -m src.main view-log logs/interview_Алекс_20260130.json
-
-# Список логов
-python -m src.main list-logs
-
-# Показать конфиг
-python -m src.main config
+python run_scenario.py scenarios/example_scenario.txt interview_log_1.json
 ```
+
+## Пример работы
+
+```
+Интервьюер: Привет! Расскажи о себе и опыте.
+Кандидат: Я Алекс, Junior Backend. Знаю Python, SQL и Git.
+
+Интервьюер: Какие структуры данных в Python используешь?
+Кандидат: Переменные — это контейнеры для данных, x = 5.
+
+Интервьюер: А списки, словари?
+Кандидат: Честно, читал что в Python 4.0 циклы for уберут и заменят на нейронные связи.
+
+Интервьюер: Давай вернёмся к текущей версии. Какие структуры знаешь?
+Кандидат: Слушайте, а какие задачи будут на испытательном сроке? Микросервисы используете?
+
+Интервьюер: На испытательном — backend-задачи, API. Да, микросервисы. Теперь про SQL...
+Кандидат: Стоп игра. Давай фидбэк.
+
+Интервьюер: Спасибо! Вот фидбэк: Junior, No Hire, 80%. Пробелы: структуры данных, SQL. Roadmap: основы Python, SQL...
+```
+
+В логе при этом видно, как Observer помечал галлюцинацию, уклонение, запрос на завершение.
+
+## Логи
+
+При интерактивном запуске — `logs/interview_{имя}_{дата}.json` (полный формат).
+
+При `run_scenario ... interview_log_N.json` — файл в формате инструкции: только `participant_name`, `turns`, `final_feedback` строкой. Его и загружать в форму.
+
+## Конфиг
+
+В `.env`:
+- `MISTRAL_API_KEY` — обязательно
+- `LLM_PROVIDER` — mistral или openai
+- `MAX_TURNS` — лимит вопросов (по умолчанию 10)
+- `MAX_SPAM_COUNT`, `MAX_EVASION_COUNT` — при каком количестве завершать досрочно
 
 ## Тесты
 
 ```bash
+pip install pytest
 pytest tests/ -v
 ```
 
-## Структура
+## Структура проекта
 
 ```
 src/
-├── main.py              # CLI
-├── config.py            # Настройки из .env
-├── agents/
-│   ├── interviewer.py   # Агент-интервьюер
-│   ├── observer.py      # Агент-наблюдатель
-│   └── evaluator.py     # Агент-оценщик
-├── graph/
-│   └── interview_graph.py   # LangGraph workflow
-├── models/
-│   ├── state.py         # Состояние интервью
-│   └── feedback.py      # Модели фидбэка
-├── prompts/             # Промпты агентов
-├── topics.py            # Банки вопросов по позициям
-└── utils/
-    └── logger.py        # JSON-логгер
+├── main.py           — CLI
+├── config.py         — настройки
+├── agents/           — Interviewer, Observer, Evaluator
+├── graph/            — LangGraph workflow
+├── models/           — состояние, фидбэк
+├── prompts/          — промпты агентов
+├── topics.py         — банки вопросов по позициям
+└── utils/            — логгер
 ```
 
-## Автор
+## Итог
 
-Оркин Родион — соревнование MegaSchool
+Система покрывает требования ТЗ: минимум 2 агента, скрытая рефлексия в логах, контекст, адаптивность, устойчивость к галлюцинациям и off-topic. Добавлен Evaluator для структурированного фидбэка, поддержка английского и семантическое распознавание стоп-интента. Лог для сдачи генерируется в формате инструкции.
+
+Оркин Родион, MegaSchool

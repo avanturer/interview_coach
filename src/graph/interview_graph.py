@@ -33,7 +33,7 @@ def create_interview_graph() -> StateGraph:
 
     def save_turn_node(state: InterviewState) -> dict:
         turn_id = state.get("current_turn_id", 0) + 1
-        thoughts = " ".join(state.get("internal_thoughts_buffer", []))
+        thoughts = "\n".join(s for s in state.get("internal_thoughts_buffer", []) if s.strip())
 
         turn = Turn(
             turn_id=turn_id,
@@ -173,7 +173,6 @@ class InterviewSession:
         if self._state.get("interview_phase") == "intro":
             self._state["interview_phase"] = "technical"
 
-        # Observer analysis
         observer_result = self._cached_observer.process_sync(self._state)
         for key, value in observer_result.items():
             if key == "internal_thoughts_buffer":
@@ -181,23 +180,16 @@ class InterviewSession:
                     self._state.get("internal_thoughts_buffer", []) + value
                 )
             elif key == "soft_skills_tracker" and value is not None:
-                # Merge soft skills tracker
                 self._state["soft_skills_tracker"] = value
             else:
                 self._state[key] = value
 
-        # Save turn
         self._save_current_turn(user_message)
-        
-        # Update technical questions count
         turn_count = self._state.get("current_turn_id", 0)
         self._state["technical_questions_count"] = turn_count
 
-        # Check termination (uses Observer's semantic intent detection)
         if self._should_finish():
             return self._finish_interview()
-
-        # Generate next question
         result = self._cached_interviewer.process_sync(self._state)
         self._state["current_agent_message"] = result.get("current_agent_message", "")
         self._state["internal_thoughts_buffer"] = result.get("internal_thoughts_buffer", [])
@@ -206,7 +198,7 @@ class InterviewSession:
 
     def _save_current_turn(self, user_message: str) -> None:
         turn_id = self._state.get("current_turn_id", 0) + 1
-        thoughts = " ".join(self._state.get("internal_thoughts_buffer", []))
+        thoughts = "\n".join(s for s in self._state.get("internal_thoughts_buffer", []) if s.strip())
 
         turn = Turn(
             turn_id=turn_id,

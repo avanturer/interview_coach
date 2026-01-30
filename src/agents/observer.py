@@ -146,26 +146,26 @@ class ObserverAgent(BaseAgent):
         }
 
     def _format_detailed_thoughts(self, analysis: ObserverAnalysis, state: InterviewState) -> str:
-        """Форматировать внутренние мысли для логирования."""
-        parts = [f"[Observer] Качество: {analysis.answer_quality}/10"]
+        """Форматировать внутренние мысли для логирования (формат инструкции: [agent]: thought\\n)."""
+        lines = [f"[Observer]: Качество: {analysis.answer_quality}/10"]
 
         if analysis.is_hallucination:
-            parts.append("[Observer] Галлюцинация")
+            lines.append("[Observer]: Галлюцинация")
         if analysis.is_confident_nonsense:
-            parts.append("[Observer] Уверенный бред")
+            lines.append("[Observer]: Уверенный бред")
         if analysis.is_evasive:
-            parts.append("[Observer] Уклонение")
+            lines.append("[Observer]: Уклонение")
         if analysis.is_spam_or_troll:
-            parts.append("[Observer] Спам")
+            lines.append("[Observer]: Спам")
         if analysis.grade_mismatch != "none":
-            parts.append(f"[Observer] Grade mismatch: {analysis.grade_mismatch}")
+            lines.append(f"[Observer]: Grade mismatch: {analysis.grade_mismatch}")
 
-        parts.append(f"[Observer->Interviewer] {analysis.instruction_to_interviewer}")
+        lines.append(f"[Observer]: {analysis.instruction_to_interviewer}")
 
         if analysis.thoughts:
-            parts.append(f"[Observer] {analysis.thoughts}")
+            lines.append(f"[Observer]: {analysis.thoughts}")
 
-        return " | ".join(parts)
+        return "\n".join(lines)
 
     def _build_history(self, state: InterviewState) -> str:
         turns = state.get("turns", [])
