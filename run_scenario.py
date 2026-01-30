@@ -27,6 +27,7 @@ from rich.panel import Panel
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from src.agents.base import LLMAPIError
 from src.config import settings
 from src.constants import VERSION
 from src.graph.interview_graph import InterviewSession
@@ -60,7 +61,12 @@ def run_scenario(
     session = InterviewSession()
     logger = InterviewLogger()
     
-    greeting = session.initialize(name, position, grade, experience)
+    try:
+        greeting = session.initialize(name, position, grade, experience)
+    except LLMAPIError as e:
+        console.print(f"[red]Ошибка API при инициализации: {e}[/red]")
+        console.print("[dim]Попробуйте позже или переключите LLM_PROVIDER на openai в .env[/dim]")
+        sys.exit(1)
     log_file = logger.start_session(name, position, grade, experience)
     
     console.print(Panel(greeting, title="Интервьюер", border_style="blue"))
@@ -68,7 +74,12 @@ def run_scenario(
     for i, msg in enumerate(messages, 1):
         console.print(f"\n[green]Кандидат ({i}/{len(messages)}):[/green] {msg}")
         
-        response, is_finished, feedback = session.process_user_input(msg)
+        try:
+            response, is_finished, feedback = session.process_user_input(msg)
+        except LLMAPIError as e:
+            console.print(f"[red]Ошибка API: {e}[/red]")
+            console.print("[dim]Попробуйте позже или переключите LLM_PROVIDER на openai в .env[/dim]")
+            sys.exit(1)
         
         if state := session.get_state():
             if turns := state.get("turns"):

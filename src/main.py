@@ -11,6 +11,7 @@ from rich.panel import Panel
 from rich.prompt import Prompt
 from rich.table import Table
 
+from src.agents.base import LLMAPIError
 from src.config import settings
 from src.graph.interview_graph import InterviewSession
 from src.topics import SUPPORTED_POSITIONS, normalize_position
@@ -153,7 +154,12 @@ def interview(
                 continue
 
             console.print("[dim]Обработка...[/dim]")
-            response, is_finished, feedback = session.process_user_input(user_input)
+            try:
+                response, is_finished, feedback = session.process_user_input(user_input)
+            except LLMAPIError as e:
+                console.print(f"[red]Ошибка API: {e}[/red]")
+                console.print("[dim]Попробуйте позже или переключите LLM_PROVIDER на openai в .env[/dim]")
+                continue
 
             if state := session.get_state():
                 if turns := state.get("turns"):
@@ -172,10 +178,13 @@ def interview(
 
         else:
             console.print("\n[yellow]Лимит вопросов. Генерация фидбэка...[/yellow]")
-            _, _, feedback = session.process_user_input("стоп")
-            if feedback:
-                logger.log_feedback(feedback)
-                print_feedback(feedback)
+            try:
+                _, _, feedback = session.process_user_input("стоп")
+                if feedback:
+                    logger.log_feedback(feedback)
+                    print_feedback(feedback)
+            except LLMAPIError as e:
+                console.print(f"[red]Ошибка API при генерации фидбэка: {e}[/red]")
 
         final_log = logger.end_session()
         console.print(f"\n[green]Интервью завершено![/green]")
