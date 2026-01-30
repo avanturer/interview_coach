@@ -19,7 +19,7 @@ class Topic:
         """Получить вопросы для грейда и сложности."""
         grade_lower = grade.lower()
         
-        if "senior" in grade_lower or difficulty >= 4:
+        if "senior" in grade_lower or "lead" in grade_lower or "expert" in grade_lower or difficulty >= 4:
             return list(self.senior_questions)
         elif "middle" in grade_lower or difficulty >= 2:
             return list(self.middle_questions)
@@ -427,6 +427,120 @@ FULLSTACK_TOPICS: Final[dict[str, Topic]] = {
     **{k: v for k, v in FRONTEND_TOPICS.items() if k in ("javascript", "react")},
 }
 
+PM_TOPICS: Final[dict[str, Topic]] = {
+    "metrics": Topic(
+        name="Метрики продукта",
+        junior_questions=(
+            "Что такое Retention и как его считают?",
+            "Какие метрики важны для мобильного приложения?",
+            "Что такое DAU, MAU, WAU?",
+        ),
+        middle_questions=(
+            "Как выбрать North Star Metric для продукта?",
+            "Как измерить успех A/B теста?",
+            "Что такое cohort analysis и когда применять?",
+        ),
+        senior_questions=(
+            "Как выстроить систему метрик для продукта?",
+            "Как связать метрики продукта с бизнес-целями?",
+            "Как работать с метриками в условиях неполных данных?",
+        ),
+    ),
+    "prioritization": Topic(
+        name="Приоритизация",
+        junior_questions=(
+            "Что такое backlog и как его вести?",
+            "Чем MoSCoW отличается от RICE?",
+            "Как оценивать сложность задачи?",
+        ),
+        middle_questions=(
+            "Как приоритизировать фичи при ограниченных ресурсах?",
+            "Что такое value vs effort матрица?",
+            "Как работать с конфликтующими приоритетами стейкхолдеров?",
+        ),
+        senior_questions=(
+            "Как выстроить процесс приоритизации в команде?",
+            "Как балансировать технический долг и новые фичи?",
+            "Как приоритизировать в условиях неопределённости?",
+        ),
+    ),
+    "discovery": Topic(
+        name="Product Discovery",
+        junior_questions=(
+            "Что такое user story и acceptance criteria?",
+            "Как проводить интервью с пользователями?",
+            "Что такое MVP?",
+        ),
+        middle_questions=(
+            "Как валидировать гипотезу до разработки?",
+            "Что такое Jobs to be Done?",
+            "Как работать с негативным фидбэком?",
+        ),
+        senior_questions=(
+            "Как выстроить discovery процесс в продукте?",
+            "Как совмещать discovery и delivery?",
+            "Как принимать решения при противоречивых данных?",
+        ),
+    ),
+}
+
+ARCHITECT_TOPICS: Final[dict[str, Topic]] = {
+    "system_design": Topic(
+        name="Проектирование систем",
+        junior_questions=(
+            "Что такое микросервисы и монолит?",
+            "Как работает load balancer?",
+            "Что такое кэширование и зачем оно?",
+        ),
+        middle_questions=(
+            "Как спроектировать систему с высокой доступностью?",
+            "Опиши стратегии репликации и шардинга.",
+            "Как обеспечить идемпотентность в распределённой системе?",
+        ),
+        senior_questions=(
+            "Как спроектировать систему для 1M RPS?",
+            "Как организовать event-driven архитектуру?",
+            "Как обеспечить consistency в распределённой системе?",
+        ),
+    ),
+    "scalability": Topic(
+        name="Масштабируемость",
+        junior_questions=(
+            "Что такое горизонтальное и вертикальное масштабирование?",
+            "Зачем нужны очереди сообщений?",
+            "Что такое CDN?",
+        ),
+        middle_questions=(
+            "Как масштабировать базу данных?",
+            "Что такое circuit breaker и retry?",
+            "Как организовать rate limiting?",
+        ),
+        senior_questions=(
+            "Как спроектировать multi-region deployment?",
+            "Как обеспечить zero-downtime deployment?",
+            "Как мониторить распределённую систему?",
+        ),
+    ),
+    "integration": Topic(
+        name="Интеграции",
+        junior_questions=(
+            "Что такое REST и когда использовать?",
+            "Чем синхронная интеграция отличается от асинхронной?",
+            "Что такое API gateway?",
+        ),
+        middle_questions=(
+            "Как версионировать API между сервисами?",
+            "Что такое saga pattern?",
+            "Как обрабатывать частичные сбои в интеграциях?",
+        ),
+        senior_questions=(
+            "Как спроектировать интеграции между 50+ микросервисами?",
+            "Как обеспечить backward compatibility при breaking changes?",
+            "Как организовать event sourcing?",
+        ),
+    ),
+}
+
 POSITION_TOPICS: Final[dict[str, dict[str, Topic]]] = {
     "backend": BACKEND_TOPICS,
     "backend developer": BACKEND_TOPICS,
@@ -458,12 +572,19 @@ POSITION_TOPICS: Final[dict[str, dict[str, Topic]]] = {
     "fullstack developer": FULLSTACK_TOPICS,
     "full stack": FULLSTACK_TOPICS,
     "full-stack": FULLSTACK_TOPICS,
+    "product manager": PM_TOPICS,
+    "pm": PM_TOPICS,
+    "продакт менеджер": PM_TOPICS,
+    "solution architect": ARCHITECT_TOPICS,
+    "архитектор": ARCHITECT_TOPICS,
+    "architect": ARCHITECT_TOPICS,
 }
 
 
 SUPPORTED_POSITIONS = (
     "Backend Developer", "Frontend Developer", "ML Engineer",
     "DevOps", "Data Analyst", "QA", "Fullstack",
+    "Product Manager", "Solution Architect",
 )
 
 
@@ -515,6 +636,12 @@ def normalize_position(position: str) -> str | None:
         "фулстек": "Fullstack",
         "фуллстек": "Fullstack",
         "full-stack": "Fullstack",
+        "product manager": "Product Manager",
+        "pm": "Product Manager",
+        "продакт": "Product Manager",
+        "solution architect": "Solution Architect",
+        "архитектор": "Solution Architect",
+        "architect": "Solution Architect",
     }
     
     for keyword, role in keywords.items():

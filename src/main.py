@@ -15,7 +15,7 @@ from src.agents.base import LLMAPIError
 from src.config import settings
 from src.graph.interview_graph import InterviewSession
 from src.topics import SUPPORTED_POSITIONS, normalize_position
-from src.utils.logger import InterviewLogger
+from src.utils.logger import InterviewLogger, export_for_submission, load_interview_log
 
 app = typer.Typer(name="interview-coach", add_completion=False)
 console = Console(width=100)
@@ -106,14 +106,31 @@ def print_feedback(feedback: dict):
 
 @app.command()
 def interview(
-    name: str = typer.Option(None, "-n", "--name", help="Имя кандидата"),
+    name: str = typer.Option(None, "-n", "--name", help="Имя кандидата (персонаж сценария)"),
     position: str = typer.Option(None, "-p", "--position", help="Позиция"),
     grade: str = typer.Option(None, "-g", "--grade", help="Грейд"),
     experience: str = typer.Option(None, "-e", "--experience", help="Опыт"),
+    participant: str = typer.Option(
+        None, "--participant",
+        help="Ваше ФИО для participant_name в JSON (для сдачи жюри)",
+    ),
+    export: str = typer.Option(
+        None, "--export",
+        help="Путь для сохранения лога в формате ТЗ (interview_log_1.json и т.д.)",
+    ),
 ):
     """Запустить интервью."""
     console.print("\n[bold cyan]Interview Coach[/bold cyan]")
     console.print("[dim]Мультиагентная система для технических интервью[/dim]\n")
+
+    if export and not participant:
+        participant = Prompt.ask(
+            "[yellow]Ваше ФИО для participant_name (для жюри)[/yellow]",
+            default="",
+        ).strip()
+        if not participant:
+            console.print("[red]Для --export нужно указать --participant \"Ваше ФИО\"[/red]")
+            raise typer.Exit(1)
 
     name = name or Prompt.ask("[cyan]Имя кандидата[/cyan]")
     
@@ -132,7 +149,11 @@ def interview(
         console.print(f"[dim]Позиция: {normalized}[/dim]")
     position = normalized
     
-    grade = grade or Prompt.ask("[cyan]Грейд[/cyan]", choices=["Junior", "Middle", "Senior"], default="Junior")
+    grade = grade or Prompt.ask(
+        "[cyan]Грейд[/cyan]",
+        choices=["Junior", "Middle", "Senior", "Lead", "Expert", "Lead / Expert"],
+        default="Junior",
+    )
     experience = experience or Prompt.ask("[cyan]Опыт[/cyan]")
 
     console.print("\n[dim]Инициализация...[/dim]")
@@ -190,6 +211,18 @@ def interview(
         console.print(f"\n[green]Интервью завершено![/green]")
         console.print(f"[dim]Лог: {final_log}[/dim]")
 
+        if participant and export:
+            target = Path(export)
+            if not target.is_absolute():
+                target = settings.log_dir / target
+            log_data = load_interview_log(final_log)
+            export_for_submission(
+                log_data, target,
+                participant_name=participant,
+            )
+            console.print(f"[bold green]Файл для сдачи (формат ТЗ): {target}[/bold green]")
+            console.print(f"[dim]participant_name: {participant}[/dim]")
+
     except KeyboardInterrupt:
         console.print("\n[yellow]Прервано.[/yellow]")
         logger.end_session()
@@ -199,8 +232,6 @@ def interview(
 @app.command()
 def view_log(log_file: Path = typer.Argument(..., help="Путь к файлу лога")):
     """Просмотреть лог интервью."""
-    from src.utils.logger import load_interview_log  # noqa: PLC0415
-
     if not log_file.exists():
         console.print(f"[red]Файл не найден: {log_file}[/red]")
         raise typer.Exit(1)
@@ -216,7 +247,10 @@ def view_log(log_file: Path = typer.Argument(..., help="Путь к файлу �
             console.print(f"[dim]{thoughts}[/dim]")
 
     if feedback := log.get("final_feedback"):
-        print_feedback(feedback)
+        if isinstance(feedback, str):
+            console.print(Panel(feedback, title="Финальный фидбэк", border_style="green"))
+        else:
+            print_feedback(feedback)
 
 
 @app.command()

@@ -157,7 +157,7 @@ class InterviewSession:
     def _get_initial_difficulty(self, grade: str) -> int:
         """Установить начальную сложность вопросов на основе грейда."""
         grade_lower = grade.lower()
-        if "senior" in grade_lower:
+        if "senior" in grade_lower or "lead" in grade_lower or "expert" in grade_lower:
             return 3
         if "middle" in grade_lower:
             return 2

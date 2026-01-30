@@ -4,7 +4,7 @@
 
 ## Что умеет
 
-- **7 позиций с отдельными банками тем** — Backend, Frontend, ML, DevOps, Data Analyst, QA, Fullstack. У каждой свои вопросы (junior/middle/senior), без подмены на Backend
+- **9 позиций с отдельными банками тем** — Backend, Frontend, ML, DevOps, Data Analyst, QA, Fullstack, Product Manager, Solution Architect. У каждой свои вопросы (junior/middle/senior/lead/expert), без подмены на Backend
 - **Адаптивная сложность** — вопросы усложняются или упрощаются в зависимости от качества ответов
 - **Детекция галлюцинаций** — если кандидат уверенно несёт чушь (типа «Python 4.0 уберёт циклы»), Observer помечает `is_hallucination` / `is_confident_nonsense`
 - **Встречные вопросы** — если кандидат спрашивает про испытательный срок или стек, интервьюер отвечает
@@ -83,6 +83,11 @@ python -m src.main interview
 С параметрами (без вопросов):
 ```bash
 python -m src.main interview -n "Иван" -p "Backend Developer" -g "Junior" -e "1 год"
+```
+
+С экспортом в формат ТЗ:
+```bash
+python -m src.main interview --participant "ФИО" --export logs/interview_log_1.json
 ```
 
 Из файла сценария (для прогона тестовых сценариев):
