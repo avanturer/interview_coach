@@ -98,11 +98,29 @@ class EvaluatorAgent(BaseAgent):
             ])
         return "\n".join(parts)
 
+    def _parse_json_robust(self, raw: str) -> dict:
+        """Парсинг JSON с попыткой исправить типичные ошибки LLM."""
+        # 1. Прямой парсинг
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            pass
+
+        # 2. Убрать trailing commas (частая ошибка LLM)
+        fixed = re.sub(r",\s*([}\]])", r"\1", raw)
+        try:
+            return json.loads(fixed)
+        except json.JSONDecodeError:
+            pass
+
+        raise json.JSONDecodeError("Не удалось распарсить JSON после исправлений", raw, 0)
+
     def _parse_feedback(self, response: str, state: InterviewState) -> FinalFeedback:
         """Распарсить JSON-фидбэк из ответа LLM."""
         try:
             match = re.search(r"\{[\s\S]*\}", response)
-            data = json.loads(match.group() if match else response)
+            raw = match.group() if match else response
+            data = self._parse_json_robust(raw)
 
             def _clamp(val: int | float, lo: int, hi: int, default: int) -> int:
                 try:
